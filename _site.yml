@@ -1,8 +1,20 @@
-name: "theblog"
-title: "My Blog"
+name: "the-blog"
+title: "THREE-256"
+theme: theme.css
+output_dir: "_site" 
 description: |
-  My Blog
-output_dir: "docs"
+  A place of my own.
+base_url: https://andrewyimingchen.github.io/theblog/
+repository_url: https://github.com/andrewyimingchen/theblog.git
+creative_commons: CC BY
+twitter:
+  site: "@ACSPQRTW"
+linkedin:
+  site: https://www.linkedin.com/in/andrewyimingchen/
+collections:
+  posts:
+    disqus: the-blog
+    share: [twitter, linkedin]
 navbar:
   right:
     - text: "Home"
