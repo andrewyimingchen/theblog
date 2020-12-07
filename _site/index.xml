@@ -7,7 +7,7 @@
     <description>A place of my own.
 </description>
     <generator>Distill</generator>
-    <lastBuildDate>Mon, 30 Nov 2020 00:00:00 +0000</lastBuildDate>
+    <lastBuildDate>Sun, 29 Nov 2020 00:00:00 +0000</lastBuildDate>
     <item>
       <title>Twitter Analysis</title>
       <dc:creator>Andrew Chen</dc:creator>
@@ -16,7 +16,8 @@
       <category>text analysis</category>
       <category>rstats</category>
       <guid>https://andrewyimingchen.github.io/theblog/posts/welcome</guid>
-      <pubDate>Mon, 30 Nov 2020 00:00:00 +0000</pubDate>
+      <pubDate>Sun, 29 Nov 2020 00:00:00 +0000</pubDate>
+      <media:content url="https://andrewyimingchen.github.io/theblog/posts/welcome/welcome_files/figure-html5/tweet distribution-1.png" medium="image" type="image/png" width="1248" height="768"/>
     </item>
   </channel>
 </rss>
