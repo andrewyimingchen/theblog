@@ -461,7 +461,7 @@ bt_tweets_tidy<- bt_tweets %>%
 
 Before we get into graphing we will need to prepare the dataset into a format we wanted. The procedure is fairly simply here, we left_join() each sentiment separately and then we combine them together by rows using bind_rows(), here the index is create by uing %/%, which gaves you only the quotient, so the index take into account of 150 tweets as a bin to count the sentiment. One thing to keep in mind is that Afinn sentiment assigned words with a range of value from -5 to 5 (which is called value insted of sentiment, hence I renamed it to sentiment). 
 
-Bing sentiment is categorize in binary section of positive and negative, but NRC has 10 different sentiments, therefore I filter for the wanted sentiments. After combining Bing and NRC, there is an extra procedure to account for the overall sentiments of each index. 
+Bing sentiment is categorize in binary section of positive and negative, but NRC has 10 different sentiments, therefore I filter for the wanted sentiments. After combining Bing and NRC, there is an extra procedure to account for the overall sentiments of each index, which I achieved this by subtracting negative from positive. 
 
 ```{r, echo=TRUE}
 bt_afinn <- bt_tweets_tidy %>% 
@@ -489,7 +489,7 @@ bt_all_sent <- bind_rows(bt_afinn, bt_bing_and_nrc)
 
 #### 2. Biden vs Trump 
 
-Now the dataset is ready to do some graph! From the graphs, AFINN and Bing both show simialr trends, however NRC sentiment is over whelminingly positive, We can do a little check of that account.
+Now the dataset is ready to do some graph! From the graphs, AFINN and Bing both show simialr trends, however NRC sentiment is over whelminingly positive, We can do a little check of that account. As you can see from the NRC and Bing tibbles, you can tell NRC has less negative words and more positive words compare to Bing, which is probably the major reason why both Trump and Biden seem a lot more positive when using NRC measurement.
 
 ```{r, echo=TRUE, fig.height=9, fig.width=12}
 bt_all_sent %>% filter(person == "Biden") %>% 
@@ -501,18 +501,25 @@ bt_all_sent %>% filter(person == "Trump") %>%
   ggplot(aes(index, sentiment, fill = method)) + 
   geom_col(show.legend = FALSE) +
   facet_wrap(~method, ncol = 1, scales = "free_y")
+
+# checking the difference of NRC and Bing 
+get_sentiments("nrc") %>% 
+  filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment)
+get_sentiments("bing") %>% 
+  count(sentiment)
 ```
 
-we left_join() the sentiment from "bing", which it simply the words into positive and negative section, 
+#### 3. What words contribute to sentiments?
+
+Here, we going to check individual word contribution to the overall sentiment for both Twittier accounts. 
 
 ```{r, echo=TRUE}
 wordcount <- bt_tweets_tidy %>%
   inner_join(get_sentiments("bing")) %>%
   count(person, word, sentiment, sort = TRUE) %>%
   ungroup()
-```
 
-```{r, echo=TRUE}
 wordcount %>%
   filter(person== "Trump" &
          !word %in%custom_stop_words$word) %>%
