@@ -3,9 +3,9 @@ title: "THREE-256"
 theme: theme.css
 output_dir: "_site" 
 description: |
-  A place of my own.
+  THREE-256
 base_url: https://andrewyimingchen.github.io/theblog/
-repository_url: https://github.com/andrewyimingchen/theblog.git
+repository_url: https://github.com/andrewyimingchen/theblog
 creative_commons: CC BY
 twitter:
   site: "@ACSPQRTW"

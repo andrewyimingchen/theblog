@@ -101,14 +101,20 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 <meta property="og:type" content="article"/>
 <meta property="og:description" content="A text analysis on Biden&#39;s and Trump&#39;s Twitter account."/>
 <meta property="og:url" content="https://andrewyimingchen.github.io/theblog/posts/welcome/"/>
+<meta property="og:image" content="https://andrewyimingchen.github.io/theblog/posts/welcome/welcome_files/figure-html5/tweet distribution-1.png"/>
+<meta property="og:image:width" content="1248"/>
+<meta property="og:image:height" content="768"/>
 <meta property="og:locale" content="en_US"/>
 <meta property="og:site_name" content="THREE-256"/>
 
 <!--  https://dev.twitter.com/cards/types/summary -->
-<meta property="twitter:card" content="summary"/>
+<meta property="twitter:card" content="summary_large_image"/>
 <meta property="twitter:title" content="THREE-256: Twitter Analysis"/>
 <meta property="twitter:description" content="A text analysis on Biden&#39;s and Trump&#39;s Twitter account."/>
 <meta property="twitter:url" content="https://andrewyimingchen.github.io/theblog/posts/welcome/"/>
+<meta property="twitter:image" content="https://andrewyimingchen.github.io/theblog/posts/welcome/welcome_files/figure-html5/tweet distribution-1.png"/>
+<meta property="twitter:image:width" content="1248"/>
+<meta property="twitter:image:height" content="768"/>
 <meta property="twitter:site" content="@ACSPQRTW"/>
 
 <!--  https://scholar.google.com/intl/en/scholar/inclusion.html#indexing -->
@@ -127,7 +133,7 @@ code span.wa { color: #545454; font-weight: bold; font-style: italic; } /* Warni
 <!--/radix_placeholder_rmarkdown_metadata-->
   
   <script type="text/json" id="radix-resource-manifest">
-  {"type":"character","attributes":{},"value":["JoeBidenTweets.csv","tweets_11-06-2020.csv","welcome_files/anchor-4.2.2/anchor.min.js","welcome_files/bowser-1.9.3/bowser.min.js","welcome_files/distill-2.2.21/template.v2.js","welcome_files/figure-html5/tweet distribution-1.png","welcome_files/figure-html5/unnamed-chunk-10-1.png","welcome_files/figure-html5/unnamed-chunk-11-1.png","welcome_files/figure-html5/unnamed-chunk-12-1.png","welcome_files/figure-html5/unnamed-chunk-15-1.png","welcome_files/figure-html5/unnamed-chunk-18-1.png","welcome_files/figure-html5/unnamed-chunk-21-1.png","welcome_files/figure-html5/unnamed-chunk-25-1.png","welcome_files/figure-html5/unnamed-chunk-25-2.png","welcome_files/figure-html5/unnamed-chunk-6-1.png","welcome_files/figure-html5/unnamed-chunk-7-1.png","welcome_files/figure-html5/unnamed-chunk-8-1.png","welcome_files/figure-html5/unnamed-chunk-9-1.png","welcome_files/jquery-1.11.3/jquery.min.js","welcome_files/webcomponents-2.0.0/webcomponents.js"]}
+  {"type":"character","attributes":{},"value":["JoeBidenTweets.csv","tweets_11-06-2020.csv","welcome_files/anchor-4.2.2/anchor.min.js","welcome_files/bowser-1.9.3/bowser.min.js","welcome_files/distill-2.2.21/template.v2.js","welcome_files/figure-html5/tweet distribution-1.png","welcome_files/figure-html5/unnamed-chunk-10-1.png","welcome_files/figure-html5/unnamed-chunk-11-1.png","welcome_files/figure-html5/unnamed-chunk-12-1.png","welcome_files/figure-html5/unnamed-chunk-15-1.png","welcome_files/figure-html5/unnamed-chunk-18-1.png","welcome_files/figure-html5/unnamed-chunk-21-1.png","welcome_files/figure-html5/unnamed-chunk-25-1.png","welcome_files/figure-html5/unnamed-chunk-25-2.png","welcome_files/figure-html5/unnamed-chunk-27-1.png","welcome_files/figure-html5/unnamed-chunk-27-2.png","welcome_files/figure-html5/unnamed-chunk-28-1.png","welcome_files/figure-html5/unnamed-chunk-28-2.png","welcome_files/figure-html5/unnamed-chunk-29-1.png","welcome_files/figure-html5/unnamed-chunk-29-2.png","welcome_files/figure-html5/unnamed-chunk-30-1.png","welcome_files/figure-html5/unnamed-chunk-30-2.png","welcome_files/figure-html5/unnamed-chunk-6-1.png","welcome_files/figure-html5/unnamed-chunk-7-1.png","welcome_files/figure-html5/unnamed-chunk-8-1.png","welcome_files/figure-html5/unnamed-chunk-9-1.png","welcome_files/jquery-1.11.3/jquery.min.js","welcome_files/webcomponents-2.0.0/webcomponents.js"]}
   </script>
   <!--radix_placeholder_navigation_in_header-->
 <meta name="distill:offset" content="../.."/>
@@ -2408,6 +2414,7 @@ d-appendix d-footnote-list a.footnote-backlink {
 <li><a href="#odds-ratio">Odds ratio</a></li>
 <li><a href="#retweets-and-likes">Retweets and likes</a></li>
 <li><a href="#changes-in-word-use">Changes in word use</a></li>
+<li><a href="#whole-lotta-sentiments">Whole lotta sentiments</a></li>
 </ul></li>
 </ul>
 </nav>
@@ -2972,7 +2979,140 @@ d-appendix d-footnote-list a.footnote-backlink {
 </div>
 <p><img src="welcome_files/figure-html5/unnamed-chunk-25-2.png" width="1152" /></p>
 </div>
-<div class="sourceCode" id="cb10"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
+<h2 id="whole-lotta-sentiments">Whole lotta sentiments</h2>
+<p>We kind of briefly touch on sentiments in the wordcloud section, here we going to add in even more sentiment analysis. First, I want to check what is the overall change of sentiment through time in both Twitter accounts. Second, I will show what are the vocabulary they use corrorspond to the positive and negative sentiments. Last, I will inspect the aggregate positive and negative sentiment over time.</p>
+<h4 id="change-of-sentiment-over-time">1. Change of sentiment over time</h4>
+<p>Since we want to see the how sentiment shifts since the beginning of the first Tweet, we need to make some changes to the original bt_tweets_tidy dataset above. I arrange the dataset according to timestamp then create an index for each row, and here we used a custom stopword “trump” to filter out trump, because bing sentiment take “trump” as an positive vocabulary, which would show overly positive bias in both account, becuase they both mentioned “Trump” a lot of times.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre><code><span class='va'>custom_stop_words</span> <span class='op'>&lt;-</span> <span class='fu'>bind_rows</span><span class='op'>(</span><span class='fu'>tibble</span><span class='op'>(</span>word <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"trump"</span><span class='op'>)</span>, lexicon <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"custom"</span><span class='op'>)</span><span class='op'>)</span>, <span class='va'>stop_words</span><span class='op'>)</span>
+
+<span class='va'>bt_tweets_tidy</span><span class='op'>&lt;-</span> <span class='va'>bt_tweets</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>arrange</span><span class='op'>(</span><span class='va'>timestamp</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>mutate</span><span class='op'>(</span>tweetnumber <span class='op'>=</span> <span class='fu'>row_number</span><span class='op'>(</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='op'>!</span><span class='fu'>str_detect</span><span class='op'>(</span><span class='va'>tweet</span>, <span class='st'>"^RT"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>mutate</span><span class='op'>(</span>text <span class='op'>=</span> <span class='fu'>str_remove_all</span><span class='op'>(</span><span class='va'>tweet</span>, <span class='va'>remove_reg</span><span class='op'>)</span>,
+         text <span class='op'>=</span> <span class='fu'>str_remove_all</span><span class='op'>(</span><span class='va'>tweet</span>, <span class='st'>"\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>unnest_tokens</span><span class='op'>(</span><span class='va'>word</span>, <span class='va'>text</span>, token <span class='op'>=</span> <span class='st'>"tweets"</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='op'>!</span><span class='va'>word</span> <span class='op'>%in%</span> <span class='va'>custom_stop_words</span><span class='op'>$</span><span class='va'>word</span>,
+         <span class='op'>!</span><span class='va'>word</span> <span class='op'>%in%</span> <span class='fu'>str_remove_all</span><span class='op'>(</span><span class='va'>custom_stop_words</span><span class='op'>$</span><span class='va'>word</span>, <span class='st'>"'"</span><span class='op'>)</span>,
+         <span class='op'>!</span><span class='va'>word</span> <span class='op'>%in%</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"amp"</span>, <span class='st'>"lt"</span>, <span class='st'>"gt"</span><span class='op'>)</span>,
+         <span class='fu'>str_detect</span><span class='op'>(</span><span class='va'>word</span>, <span class='st'>"[a-z]"</span><span class='op'>)</span><span class='op'>)</span>
+</code></pre>
+</div>
+</div>
+<p>Before we get into graphing we will need to prepare the dataset into a format we wanted. The procedure is fairly simply here, we left_join() each sentiment separately and then we combine them together by rows using bind_rows(), here the index is create by uing %/%, which gaves you only the quotient, so the index take into account of 150 tweets as a bin to count the sentiment. One thing to keep in mind is that Afinn sentiment assigned words with a range of value from -5 to 5 (which is called value insted of sentiment, hence I renamed it to sentiment).</p>
+<p>Bing sentiment is categorize in binary section of positive and negative, but NRC has 10 different sentiments, therefore I filter for the wanted sentiments. After combining Bing and NRC, there is an extra procedure to account for the overall sentiments of each index, which I achieved this by subtracting negative from positive.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre><code><span class='va'>bt_afinn</span> <span class='op'>&lt;-</span> <span class='va'>bt_tweets_tidy</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>inner_join</span><span class='op'>(</span><span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"afinn"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>group_by</span><span class='op'>(</span><span class='va'>person</span>, index <span class='op'>=</span> <span class='va'>tweetnumber</span> <span class='op'>%/%</span> <span class='fl'>150</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>summarise</span><span class='op'>(</span>sentiment <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/base/sum.html'>sum</a></span><span class='op'>(</span><span class='va'>value</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>mutate</span><span class='op'>(</span>method <span class='op'>=</span> <span class='st'>"AFINN"</span><span class='op'>)</span>
+
+<span class='va'>bt_bing_and_nrc</span> <span class='op'>&lt;-</span> <span class='fu'>bind_rows</span><span class='op'>(</span>
+  <span class='va'>bt_tweets_tidy</span> <span class='op'>%&gt;%</span> 
+    <span class='fu'>inner_join</span><span class='op'>(</span><span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"bing"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+    <span class='fu'>mutate</span><span class='op'>(</span>method <span class='op'>=</span> <span class='st'>"Bing"</span><span class='op'>)</span>,
+  <span class='va'>bt_tweets_tidy</span> <span class='op'>%&gt;%</span> 
+    <span class='fu'>inner_join</span><span class='op'>(</span><span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"nrc"</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+                 <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>sentiment</span> <span class='op'>%in%</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"positive"</span>, 
+                                         <span class='st'>"negative"</span><span class='op'>)</span><span class='op'>)</span>
+    <span class='op'>)</span> <span class='op'>%&gt;%</span>
+    <span class='fu'>mutate</span><span class='op'>(</span>method <span class='op'>=</span> <span class='st'>"NRC"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>count</span><span class='op'>(</span><span class='va'>person</span>, <span class='va'>method</span>, index <span class='op'>=</span> <span class='va'>tweetnumber</span> <span class='op'>%/%</span> <span class='fl'>150</span>, <span class='va'>sentiment</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>spread</span><span class='op'>(</span><span class='va'>sentiment</span>, <span class='va'>n</span>, fill <span class='op'>=</span> <span class='fl'>0</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>mutate</span><span class='op'>(</span>sentiment <span class='op'>=</span> <span class='va'>positive</span> <span class='op'>-</span> <span class='va'>negative</span><span class='op'>)</span>
+
+<span class='va'>bt_all_sent</span> <span class='op'>&lt;-</span> <span class='fu'>bind_rows</span><span class='op'>(</span><span class='va'>bt_afinn</span>, <span class='va'>bt_bing_and_nrc</span><span class='op'>)</span>
+</code></pre>
+</div>
+</div>
+<h4 id="biden-vs-trump-1">2. Biden vs Trump</h4>
+<p>Now the dataset is ready to do some graph! From the graphs, AFINN and Bing both show simialr trends, however NRC sentiment is over whelminingly positive, We can do a little check of that account. As you can see from the NRC and Bing tibbles, you can tell NRC has less negative words and more positive words compare to Bing, which is probably the major reason why both Trump and Biden seem a lot more positive when using NRC measurement.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre><code><span class='va'>bt_all_sent</span> <span class='op'>%&gt;%</span> <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>person</span> <span class='op'>==</span> <span class='st'>"Biden"</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'>aes</span><span class='op'>(</span><span class='va'>index</span>, <span class='va'>sentiment</span>, fill <span class='op'>=</span> <span class='va'>method</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'>geom_col</span><span class='op'>(</span>show.legend <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>facet_wrap</span><span class='op'>(</span><span class='op'>~</span><span class='va'>method</span>, ncol <span class='op'>=</span> <span class='fl'>1</span>, scales <span class='op'>=</span> <span class='st'>"free_y"</span><span class='op'>)</span>
+</code></pre>
+</div>
+<img src="welcome_files/figure-html5/unnamed-chunk-28-1.png" width="1152" />
+<div class="sourceCode">
+<pre><code><span class='va'>bt_all_sent</span> <span class='op'>%&gt;%</span> <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>person</span> <span class='op'>==</span> <span class='st'>"Trump"</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'>aes</span><span class='op'>(</span><span class='va'>index</span>, <span class='va'>sentiment</span>, fill <span class='op'>=</span> <span class='va'>method</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span> 
+  <span class='fu'>geom_col</span><span class='op'>(</span>show.legend <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>facet_wrap</span><span class='op'>(</span><span class='op'>~</span><span class='va'>method</span>, ncol <span class='op'>=</span> <span class='fl'>1</span>, scales <span class='op'>=</span> <span class='st'>"free_y"</span><span class='op'>)</span>
+</code></pre>
+</div>
+<img src="welcome_files/figure-html5/unnamed-chunk-28-2.png" width="1152" />
+<div class="sourceCode">
+<pre><code><span class='co'># checking the difference of NRC and Bing </span>
+<span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"nrc"</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>sentiment</span> <span class='op'>%in%</span> <span class='fu'><a href='https://rdrr.io/r/base/c.html'>c</a></span><span class='op'>(</span><span class='st'>"positive"</span>, <span class='st'>"negative"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>count</span><span class='op'>(</span><span class='va'>sentiment</span><span class='op'>)</span>
+</code></pre>
+</div>
+<pre><code># A tibble: 2 x 2
+  sentiment     n
+  &lt;chr&gt;     &lt;int&gt;
+1 negative   3324
+2 positive   2312</code></pre>
+<div class="sourceCode">
+<pre><code><span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"bing"</span><span class='op'>)</span> <span class='op'>%&gt;%</span> 
+  <span class='fu'>count</span><span class='op'>(</span><span class='va'>sentiment</span><span class='op'>)</span>
+</code></pre>
+</div>
+<pre><code># A tibble: 2 x 2
+  sentiment     n
+  &lt;chr&gt;     &lt;int&gt;
+1 negative   4781
+2 positive   2005</code></pre>
+</div>
+<h4 id="what-words-contribute-to-sentiments">3. What words contribute to sentiments?</h4>
+<p>In this section we going to check individual word contribution to the overall sentiment for both Twittier accounts.</p>
+<div class="layout-chunk" data-layout="l-body">
+<div class="sourceCode">
+<pre><code><span class='va'>wordcount</span> <span class='op'>&lt;-</span> <span class='va'>bt_tweets_tidy</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>inner_join</span><span class='op'>(</span><span class='fu'>get_sentiments</span><span class='op'>(</span><span class='st'>"bing"</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>count</span><span class='op'>(</span><span class='va'>person</span>, <span class='va'>word</span>, <span class='va'>sentiment</span>, sort <span class='op'>=</span> <span class='cn'>TRUE</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>ungroup</span><span class='op'>(</span><span class='op'>)</span>
+
+<span class='va'>wordcount</span> <span class='op'>%&gt;%</span>
+  <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>person</span><span class='op'>==</span> <span class='st'>"Trump"</span> <span class='op'>&amp;</span>
+         <span class='op'>!</span><span class='va'>word</span> <span class='op'>%in%</span><span class='va'>custom_stop_words</span><span class='op'>$</span><span class='va'>word</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>group_by</span><span class='op'>(</span><span class='va'>sentiment</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>top_n</span><span class='op'>(</span><span class='fl'>10</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>ungroup</span><span class='op'>(</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>mutate</span><span class='op'>(</span>word <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/reorder.factor.html'>reorder</a></span><span class='op'>(</span><span class='va'>word</span>, <span class='va'>n</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'>aes</span><span class='op'>(</span><span class='va'>n</span>, <span class='va'>word</span>, fill <span class='op'>=</span> <span class='va'>sentiment</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>geom_col</span><span class='op'>(</span>show.legend <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>facet_wrap</span><span class='op'>(</span><span class='op'>~</span><span class='va'>sentiment</span>, scales <span class='op'>=</span> <span class='st'>"free_y"</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>labs</span><span class='op'>(</span>x <span class='op'>=</span> <span class='st'>"Contribution to sentiment"</span>,
+       y <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span>
+</code></pre>
+</div>
+<img src="welcome_files/figure-html5/unnamed-chunk-29-1.png" width="624" />
+<div class="sourceCode">
+<pre><code><span class='va'>wordcount</span> <span class='op'>%&gt;%</span>
+  <span class='fu'><a href='https://rdrr.io/r/stats/filter.html'>filter</a></span><span class='op'>(</span><span class='va'>person</span><span class='op'>==</span> <span class='st'>"Biden"</span> <span class='op'>&amp;</span>
+         <span class='op'>!</span><span class='va'>word</span> <span class='op'>%in%</span><span class='va'>custom_stop_words</span><span class='op'>$</span><span class='va'>word</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>group_by</span><span class='op'>(</span><span class='va'>sentiment</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>top_n</span><span class='op'>(</span><span class='fl'>10</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>ungroup</span><span class='op'>(</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>mutate</span><span class='op'>(</span>word <span class='op'>=</span> <span class='fu'><a href='https://rdrr.io/r/stats/reorder.factor.html'>reorder</a></span><span class='op'>(</span><span class='va'>word</span>, <span class='va'>n</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>%&gt;%</span>
+  <span class='fu'>ggplot</span><span class='op'>(</span><span class='fu'>aes</span><span class='op'>(</span><span class='va'>n</span>, <span class='va'>word</span>, fill <span class='op'>=</span> <span class='va'>sentiment</span><span class='op'>)</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>geom_col</span><span class='op'>(</span>show.legend <span class='op'>=</span> <span class='cn'>FALSE</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>facet_wrap</span><span class='op'>(</span><span class='op'>~</span><span class='va'>sentiment</span>, scales <span class='op'>=</span> <span class='st'>"free_y"</span><span class='op'>)</span> <span class='op'>+</span>
+  <span class='fu'>labs</span><span class='op'>(</span>x <span class='op'>=</span> <span class='st'>"Contribution to sentiment"</span>,
+       y <span class='op'>=</span> <span class='cn'>NULL</span><span class='op'>)</span>
+</code></pre>
+</div>
+<p><img src="welcome_files/figure-html5/unnamed-chunk-29-2.png" width="624" /></p>
+</div>
+<div class="sourceCode" id="cb12"><pre class="sourceCode r distill-force-highlighting-css"><code class="sourceCode r"></code></pre></div>
 <!--radix_placeholder_article_footer-->
 <div class="article-footer">
   <p class="social_footer">
