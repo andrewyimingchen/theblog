@@ -31,6 +31,8 @@ library(RColorBrewer)
 library(tidytext)
 library(broom)
 library(reshape2)
+library(plotly)
+library(visibly)
 ```
 
 # Biden vs Trump 
@@ -433,4 +435,173 @@ bt_words_by_time %>%
   scale_color_brewer(palette = "Set3") + 
   geom_line(size = 1.3) +
   labs(x = "Biden", y = "Word frequency", caption = "Andrew Cehn")
+```
+
+## Whole lotta sentiments
+
+We kind of briefly touch on sentiments in the wordcloud section, here we going to add in even more sentiment analysis. First, I want to check what is the overall change of sentiment through time in both Twitter accounts. Second, I will show what are the vocabulary they use corrorspond to the positive and negative sentiments. Last, I will inspect the aggregate positive and negative sentiment over time.
+
+#### 1. Preparing data
+
+Since we want to see the how sentiment shifts since the beginning of the first Tweet, we need to make some changes to the original bt_tweets_tidy dataset above. I arrange the dataset according to timestamp then create an index for each row, and here we used a custom stopword "trump" to filter out trump, because bing sentiment take "trump" as an positive vocabulary, which would show overly positive bias in both account, becuase they both mentioned "Trump" a lot of times.
+
+```{r, echo=TRUE}
+custom_stop_words <- bind_rows(tibble(word = c("trump"), lexicon = c("custom")), stop_words)
+
+bt_tweets_tidy<- bt_tweets %>%
+  arrange(timestamp) %>%
+  mutate(tweetnumber = row_number()) %>%
+  filter(!str_detect(tweet, "^RT")) %>%
+  mutate(text = str_remove_all(tweet, remove_reg),
+         text = str_remove_all(tweet, "\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)")) %>%
+  unnest_tokens(word, text, token = "tweets") %>%
+  filter(!word %in% custom_stop_words$word,
+         !word %in% str_remove_all(custom_stop_words$word, "'"),
+         !word %in% c("amp", "lt", "gt"),
+         str_detect(word, "[a-z]"))
+```
+
+Before we get into graphing we will need to prepare the dataset into a format we wanted. The procedure is fairly simply here, we left_join() each sentiment separately and then we combine them together by rows using bind_rows(), here the index is create by uing %/%, which gaves you only the quotient, so the index take into account of 150 tweets as a bin to count the sentiment. One thing to keep in mind is that Afinn sentiment assigned words with a range of value from -5 to 5 (which is called value insted of sentiment, hence I renamed it to sentiment). 
+
+Bing sentiment is categorize in binary section of positive and negative, but NRC has 10 different sentiments, therefore I filter for the wanted sentiments. After combining Bing and NRC, there is an extra procedure to account for the overall sentiments of each index, which I achieved this by subtracting negative from positive. 
+
+```{r, echo=TRUE}
+bt_afinn <- bt_tweets_tidy %>% 
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(person, index = tweetnumber %/% 150) %>% 
+  summarise(sentiment = sum(value)) %>% 
+  mutate(method = "AFINN")
+
+bt_bing_and_nrc <- bind_rows(
+  bt_tweets_tidy %>% 
+    inner_join(get_sentiments("bing")) %>%
+    mutate(method = "Bing"),
+  bt_tweets_tidy %>% 
+    inner_join(get_sentiments("nrc") %>% 
+                 filter(sentiment %in% c("positive", 
+                                         "negative"))
+    ) %>%
+    mutate(method = "NRC")) %>%
+  count(person, method, index = tweetnumber %/% 150, sentiment) %>%
+  spread(sentiment, n, fill = 0) %>%
+  mutate(sentiment = positive - negative)
+
+bt_all_sent <- bind_rows(bt_afinn, bt_bing_and_nrc)
+```
+
+#### 2. Change of sentiment over time 
+
+Now the dataset is ready to do some graph! From the graphs, AFINN and Bing both show simialr trends, however NRC sentiment is over whelminingly positive, We can do a little check of that account. As you can see from the NRC and Bing tibbles, you can tell NRC has less negative words and more positive words compare to Bing, which is probably the major reason why both Trump and Biden seem a lot more positive when using NRC measurement.
+
+```{r, echo=TRUE, fig.height=9, fig.width=12}
+bt_all_sent %>% filter(person == "Biden") %>% 
+  ggplot(aes(index, sentiment, fill = method)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+bt_all_sent %>% filter(person == "Trump") %>% 
+  ggplot(aes(index, sentiment, fill = method)) + 
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~method, ncol = 1, scales = "free_y")
+
+# checking the difference of NRC and Bing 
+get_sentiments("nrc") %>% 
+  filter(sentiment %in% c("positive", "negative")) %>% 
+  count(sentiment)
+get_sentiments("bing") %>% 
+  count(sentiment)
+```
+
+#### 3. Overall cumulative sentiments
+
+This is a rather simple method, we just need to take the bw_tweet_tidy which is already prepared for graphing and inner_join with sentiment. So how is Trump sentiments perform since his announcement of presidential campaign in 2015/06/16? It is quite obvious that over time his tweets are becoming more negative than positive where the difference between the two become negative as shown in the difference line. But what about Biden's sentiment after his announcement of his 2020 presidential campaign? The graph showed an opposite story, which the positive line diverge from the negative line early on and the difference is even larger in later tweets. 
+
+```{r}
+bt_tweets_sent <- bt_tweets_tidy %>%
+  inner_join(get_sentiments("afinn")) %>% 
+  group_by(tweetnumber, timestamp, person, word) %>% 
+  summarise(value) %>%
+  ungroup()
+```
+```{r, echo=FALSE}
+tb <- list(
+  tickfont = list(color = "#2ca02c40"),
+  overlaying = "y",
+  side = "right",
+  title = "sentiment difference",
+  titlefont = list(textangle=45),
+  zeroline = F
+)
+```
+```{r, echo=TRUE, fig.height=5, fig.width=12}
+bt_tweets_sent %>% 
+  filter(person == "Trump" &
+           !word %in% "trump" &
+           timestamp >= "2015-06-16") %>%
+  mutate(positivity = cumsum(if_else(value>0, value, 0)),
+         negativity = cumsum(abs(if_else(value<0, value, 0)))) %>% 
+  plot_ly() %>% 
+  add_lines(x=~tweetnumber, y=~positivity, name='positive') %>% 
+  add_lines(x=~tweetnumber, y=~negativity, name='negative', color = I("red")) %>%
+  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", yaxis="y2", color = I("#ff8400")) %>% 
+  layout(
+    title = "Trump's overall cumulative sentiment",
+    yaxis = list(title='absolute cumulative sentiment'),
+    yaxis2 = tb
+  ) %>% 
+  theme_plotly()
+
+bt_tweets_sent %>% 
+  filter(person == "Biden" &
+           !word %in% "trump" &
+           timestamp >= "2019-04-25") %>%
+  mutate(positivity = cumsum(if_else(value>0, value, 0)),
+         negativity = cumsum(abs(if_else(value<0, value, 0)))) %>% 
+  plot_ly() %>% 
+  add_lines(x=~tweetnumber, y=~positivity, name='positive') %>% 
+  add_lines(x=~tweetnumber, y=~negativity, name='negative', color = I("red")) %>%
+  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", yaxis="y2", color = I("#ff8400")) %>% 
+  layout(
+    title = "Biden's overall cumulative sentiment",
+    yaxis = list(title='absolute cumulative sentiment'),
+    yaxis2 = tb
+  ) %>% 
+  theme_plotly()
+```
+
+#### 4. What words contribute to sentiments?
+
+Here, we going to check individual word contribution to the overall sentiment for both Twittier accounts. we will look on detail later on how words associate with eatch other 
+
+```{r, echo=TRUE}
+wordcount <- bt_tweets_tidy %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(person, word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+wordcount %>%
+  filter(person== "Trump" &
+         !word %in%custom_stop_words$word) %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
+
+wordcount %>%
+  filter(person== "Biden" &
+         !word %in%custom_stop_words$word) %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, n)) %>%
+  ggplot(aes(n, word, fill = sentiment)) +
+  geom_col(show.legend = FALSE) +
+  facet_wrap(~sentiment, scales = "free_y") +
+  labs(x = "Contribution to sentiment",
+       y = NULL)
 ```
