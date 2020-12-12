@@ -6,14 +6,14 @@
       "description": "A place of my own.",
       "author": [],
       "contents": "\nHi, welcome to my blog, my name is Andrew Chen. I trained in the field of development economics, but I know nothing about it.\nWhere to find me:\nandrew-chen\nandrew-chen\n\n\n\n",
-      "last_modified": "2020-12-12T14:44:02+08:00"
+      "last_modified": "2020-12-12T14:50:04+08:00"
     },
     {
       "path": "index.html",
       "title": "My Blog",
       "author": [],
       "contents": "\n\n\n\n",
-      "last_modified": "2020-12-12T14:42:32+08:00"
+      "last_modified": "2020-12-12T14:50:12+08:00"
     }
   ],
   "collections": ["posts/posts.json"]
