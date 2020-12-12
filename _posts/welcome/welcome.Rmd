@@ -533,7 +533,7 @@ tb <- list(
   zeroline = F
 )
 ```
-```{r, echo=TRUE, fig.height=5, fig.width=12}
+```{r, echo=TRUE}
 bt_tweets_sent %>% 
   filter(person == "Trump" &
            !word %in% "trump" &
