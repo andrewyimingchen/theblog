@@ -22,7 +22,7 @@ knitr::opts_chunk$set(echo = FALSE)
 
 ```
 
-```{r, echo=FALSE}
+```{r library, echo=FALSE}
 library(tidyverse)
 library(lubridate) 
 library(scales)
@@ -41,14 +41,14 @@ library(visibly)
 
 The datasource for Trump's Twitter is from this amazing Twitter monitor website built by Brendan Brown, https://www.thetrumparchive.com/, and Biden's Tiwtter is a Kaggle dataset build by Vopani, https://www.kaggle.com/rohanrao/joe-biden-tweets.
 
-```{r, echo=TRUE}
+```{r get-data, echo=TRUE}
 trump_tweets <- read_csv("tweets_11-06-2020.csv")
 biden_tweets <- read_csv("JoeBidenTweets.csv")
 ```
 
 First, we will combine Trump's and Biden's Twitter dataset, and we will exclude retweets. 
 
-```{r, echo=TRUE}
+```{r setup-data, echo=TRUE}
 trump_tweets <- trump_tweets %>% 
   mutate(timestamp = date, tweet = text, likes = favorites) %>%
   filter(!isRetweet) %>%
@@ -84,7 +84,7 @@ bt_tweets %>% ggplot(aes(timestamp, fill = person)) +
 
 In order to make a tidy data frame ready for text anaylsis in the tweets, which we will remove retweets, the common English stop words, and any http links.
 
-``` {r echo=TRUE}
+``` {r tidy-tweets, echo=TRUE}
 remove_reg <- "&amp;|&lt;|&gt;" # to remove & < >
 bt_tweets_tidy<- bt_tweets %>%
   filter(!str_detect(tweet, "^RT")) %>% # to remove retweet
@@ -99,7 +99,7 @@ bt_tweets_tidy<- bt_tweets %>%
 
 Now we trying to create a data frame that count each words' frequency for each person, first, we group by pearson, then count each words used by each person, then left join by a column with total words used by each person, then we can mutate a new column for frequency of each words. 
 
-``` {r, echo=TRUE}
+``` {r freq, echo=TRUE}
 frequ <- bt_tweets_tidy %>%
   group_by(person) %>%
   count(word, sort = TRUE) %>%
@@ -116,7 +116,7 @@ frequ <- frequ %>% select(person, word, freq) %>%
 
 From this graph below, the words show up near the read line indicate similar frequency in both Twitter account, the points toward the top mean the words show up more in Trump's Twitter account, while the points toward the right mean the words show up more in Biden's Twitter account. From this graph alone, we can already spot some vocabulary differances, such as "fake" & "equity"
 
-```{r,echo=TRUE, fig.height=9, fig.width=9}
+```{r freq-graph,echo=TRUE, fig.height=9, fig.width=9}
 frequ %>% ggplot(aes(Biden, Trump)) + 
   geom_jitter(alpha = 0.1, size = 2.5, width = 0.25, height = 0.25) +
   geom_text(aes(label = word), check_overlap = TRUE, vjust = 1) +
@@ -127,7 +127,7 @@ frequ %>% ggplot(aes(Biden, Trump)) +
 
 However, Biden's Twitter account is barely active prior to his announcement of 2020 election, so let's see the frequency plot after 2019/04/25. Again, you see "fake" still falls above the redline and climate at the bottem right. 
 
-```{r 2019 frequency,echo=TRUE, message=FALSE}
+```{r 2019-frequency,echo=TRUE, message=FALSE}
 bt_tweets_tidy_campagin <- bt_tweets_tidy %>% filter(timestamp >= as.Date("2019-04-25"))
 frequ_2019 <- bt_tweets_tidy_campagin %>%
   group_by(person) %>%
@@ -141,7 +141,7 @@ frequ_2019 <- frequ_2019 %>% select(person, word, freq) %>%
   spread(person, freq) %>%
   arrange(Biden, Trump)
 ```
-```{r, echo=TRUE, fig.height=9, fig.width=9}
+```{r 2019-freq-graph, echo=TRUE, fig.height=9, fig.width=9}
 frequ_2019 %>% ggplot(aes(Biden, Trump)) + 
   geom_jitter(alpha = 0.1, size = 2.5, width = 0.25, height = 0.25) +
   geom_text(aes(label = word), check_overlap = TRUE, vjust = 1.5) +
@@ -156,7 +156,7 @@ frequ_2019 %>% ggplot(aes(Biden, Trump)) +
 
 This graph represents the overall word counts in the dataset, closer to the center means that particular word appear the more than the other and the size of the word shows the magnitude of the word appearance, in this case "trump" and "president" are the most used word. 
 
-```{r, fig.height=9, fig.width=9, echo=TRUE}
+```{r total-word, fig.height=9, fig.width=9, echo=TRUE}
 bt_tweets_tidy %>%
   group_by(word) %>%
   filter(!str_detect(word, "^@")) %>%
@@ -169,7 +169,7 @@ with(wordcloud(word, n, min.freq = 200, max.word = 400, rot.per =0.35, random.or
 
 These two graphs represent the hastag counts in Trump's and Biden's Twitter accounts, not surprisingly Trump's most used hashtag is his 2016 presidential campaign "#trump2016", whereas Biden is Democrat's debate "#demdebate", I would expect "teamjoe" be the most used hashtag.
 
-```{r, fig.height=9, fig.width=9, echo=TRUE}
+```{r hashtag-trump, fig.height=9, fig.width=9, echo=TRUE}
 bt_tweets_tidy %>%
   filter(person == "Trump") %>%
   group_by(word) %>%
@@ -178,7 +178,7 @@ bt_tweets_tidy %>%
   with(wordcloud(word,n, min.freq = 1, max.word = 300, rot.per =0.35, random.order = FALSE,
                  colors = brewer.pal(12, "Paired"), scale = c(3,0.8)))
 ```
-```{r, fig.height=9, fig.width=9, echo=TRUE}
+```{r hastag-biden, fig.height=9, fig.width=9, echo=TRUE}
 bt_tweets_tidy %>%
   filter(person == "Biden") %>%
   group_by(word) %>%
@@ -192,7 +192,7 @@ bt_tweets_tidy %>%
 
 Here I tried a slightly fancier word cloud that separate the words base on the sentiments in NRC, https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html, graph 1 represents the sentiment word counts in Trump's account, and graph 2 represents Biden's. "vote", "president" and "time" are all quite relevant in both account, but why "vote" is assigned to surprise is beyond my understanding. 
 
-```{r, fig.height=9, fig.width=9, echo=TRUE}
+```{r sentimentcloud-trump, fig.height=9, fig.width=9, echo=TRUE}
 # trump words
 bt_tweets_tidy %>%
   filter(person == "Trump" & !word == "trump") %>%
@@ -202,7 +202,7 @@ bt_tweets_tidy %>%
   comparison.cloud(colors = brewer.pal(10, "Paired"), max.words = 400, 
                    match.colors = TRUE, title.size = 1.5, random.order = FALSE, scale = c(3,0.5))
 ```
-```{r, fig.height=9, fig.width=9, echo=TRUE}
+```{r sentimentcloud-biden, fig.height=9, fig.width=9, echo=TRUE}
 # biden words 
 bt_tweets_tidy %>%
   filter(person == "Biden" & !word == "trump") %>%
@@ -217,7 +217,7 @@ bt_tweets_tidy %>%
 
 In order to know which word is more likely to be used in either Twitter account, we will find the odds ratio for each words and here we use the timeframe after Biden announced his presidential campagin. After ungroup, we spread the data by person.
 
-```{r, echo=TRUE}
+```{r oddratio-setup, echo=TRUE}
 bt_words_ratio <- bt_tweets_tidy_campagin %>%
   filter(!str_detect(word, "^@")) %>% # remove tags on individual accounts 
   count(word, person) %>%
@@ -232,7 +232,7 @@ bt_words_ratio <- bt_tweets_tidy_campagin %>%
 
 Here it's just a demonstration of how to calculate the odds ratio manunally.
 
-```{r, echo=TRUE}
+```{r manual-setup, echo=TRUE}
 bt_tweets_tidy_campagin %>%
   filter(!str_detect(word, "^@")) %>%
   count(word, person) %>%
@@ -250,7 +250,7 @@ bt_tweets_tidy_campagin %>%
 
 From the log odds ratio graph, I pick the top 15 words in both Twitter account, not surprisingly Biden's account is more likely to use vocabulary such as "climate", "gender", "lgbtq", "inclusive", where as Trump's account used a vocabulary like "wow", "lamestream", "sleepy", "fake", and most obviously "#maga".
 
-```{r, echo=TRUE}
+```{r oddratio-graph, echo=TRUE}
 ## the words more likely from the otherside 
 group_colors <- c("FALSE" = colors()[26], "TRUE" = colors()[552]) 
 
@@ -272,7 +272,7 @@ bt_words_ratio %>%
 
 Let's see what sort of words that give the highest retweets for Trump and Biden. First, check the total rtweets from both accounts. The first group_by() and summarise() count how many retweets of each tweets id, the second group_by() and sumarise() sum up the whole retweets for each account. 
 
-```{r, echo=TRUE}
+```{r rt-setup, echo=TRUE}
 bt_totals <- bt_tweets_tidy %>%
   group_by(person, id) %>%
   summarise(rts = first(retweets)) %>%
@@ -284,7 +284,7 @@ bt_totals
 
 Now we have the total retweets ready, we want to find the median of retweets of each word. The frist group_by() and summarise() show how many retweets does each word has for each tweet id and person. The second group_by() and summarise() show the median or retweets for each word and the total usage of each word. (so if the word is used only once, the median retweets is the same as the maximum and minum retweets.) 
 
-```{r, echo=TRUE}
+```{r rt-bywords, echo=TRUE}
 bt_word_by_rts <- bt_tweets_tidy %>%
   group_by(id, person, word) %>%
   summarise(rts = first(retweets)) %>%
@@ -297,7 +297,7 @@ bt_word_by_rts <- bt_tweets_tidy %>%
 bt_word_by_rts
 ```
 
-```{r, echo=TRUE}
+```{r rt-graph, echo=TRUE}
 group.colors <- c(Trump = colors()[552], Biden = colors()[26])
 
 bt_word_by_rts %>%
@@ -320,7 +320,7 @@ bt_word_by_rts %>%
 
 The strategy to get check the what word gives the highest median of retweets is the same as the one we used above.
 
-```{r, echo=TRUE}
+```{r like-setup, echo=TRUE}
 bt_totals_fav <- bt_tweets_tidy %>%
   group_by(person, id) %>%
   summarise(fav = first(likes)) %>%
@@ -330,7 +330,7 @@ bt_totals_fav <- bt_tweets_tidy %>%
 bt_totals_fav
 ```
 
-```{r, echo=TRUE}
+```{r like-byword, echo=TRUE}
 bt_word_by_fav <- bt_tweets_tidy %>%
   group_by(id, person, word) %>%
   summarise(fav = first(likes)) %>%
@@ -342,7 +342,7 @@ bt_word_by_fav <- bt_tweets_tidy %>%
 
 bt_word_by_fav
 ```
-```{r, echo=TRUE}
+```{r like-graph, echo=TRUE}
 bt_word_by_fav %>%
   filter(uses >= 5) %>%
   group_by(person) %>%
@@ -364,7 +364,7 @@ bt_word_by_fav %>%
 
 So now we would look at how words' frequencies change overtime. To do that, we first create a new time varible to get the unit of time for in order to calculate the word in that time span. Here, I choose 1 month as the base, in floor_date() you can set your unit of time in different measures. The count() counts how many times the word is use in 1 month then follow by a group_by() to account unit of time in order to use a mutate() to attach the total amount of word used in 1 month, the second group_by() accounts word so that mutate() can attach a total count of word use by that person. 
 
-```{r, echo=TRUE}
+```{r wordbytime-setup, echo=TRUE}
 bt_words_by_time <- bt_tweets_tidy_campagin %>%
   filter(!str_detect(word, "^@")) %>% # to filter out account taging in Twitter
   mutate(time_floor = floor_date(timestamp, unit = "1 month")) %>%
@@ -380,7 +380,7 @@ bt_words_by_time <- bt_tweets_tidy_campagin %>%
 
 Now the dataset is ready to be nested to run our model. Since we trying to find if the word useage change over time, it's ideal to use a nested dataset, so in each word it nested a samller dataset that contains the "time_floor", "count", "time_total", and "word_total". Here we use glm and binomial for our model.
 
-```{r, echo=TRUE}
+```{r nested-model, echo=TRUE}
 bt_nested_data <- bt_words_by_time %>%
   group_by(person, word) %>%
   nest()
@@ -405,7 +405,7 @@ bt_nested_models
 
 From above the bt_nested_models is has another list attach in the dataframe label as models, now we want to extract the componets in the glm model, here we can use a powerful function tidy() to summarize information in the model then unnest that models column. Since we are comparing multiple p values best to adjust them!  
 
-```{r, echo=TRUE}
+```{r slopes, echo=TRUE}
 slopes <- bt_nested_models %>%
   mutate(models = map(models, tidy)) %>%
   unnest(cols = c(models)) %>%
@@ -417,7 +417,7 @@ top_slopes <- slopes %>% filter(adjusted.p.value <0.05)
 
 From the graphs below, both illustrate the trendy words that appeared more than 350 times in the period of 2019-04-25 to now. In the trump graph, it is obvious that closer to the election date the mentioning of biden and vote skyrocket compare to other words. In the other hand, biden graph shows that "trump" and "president" maintian rather stable high freqencies. 
 
-```{r, echo=TRUE, fig.height=9, fig.width=12}
+```{r wordsbytime, echo=TRUE, fig.height=9, fig.width=12}
 bt_words_by_time %>%
   inner_join(top_slopes, by = c("word", "person")) %>%
   filter(person == "Trump" &
@@ -445,7 +445,7 @@ We kind of briefly touch on sentiments in the wordcloud section, here we going t
 
 Since we want to see the how sentiment shifts since the beginning of the first Tweet, we need to make some changes to the original bt_tweets_tidy dataset above. I arrange the dataset according to timestamp then create an index for each row, and here we used a custom stopword "trump" to filter out trump, because bing sentiment take "trump" as an positive vocabulary, which would show overly positive bias in both account, becuase they both mentioned "Trump" a lot of times.
 
-```{r, echo=TRUE}
+```{r sentiment-setup, echo=TRUE}
 custom_stop_words <- bind_rows(tibble(word = c("trump"), lexicon = c("custom")), stop_words)
 
 bt_tweets_tidy<- bt_tweets %>%
@@ -465,7 +465,7 @@ Before we get into graphing we will need to prepare the dataset into a format we
 
 Bing sentiment is categorize in binary section of positive and negative, but NRC has 10 different sentiments, therefore I filter for the wanted sentiments. After combining Bing and NRC, there is an extra procedure to account for the overall sentiments of each index, which I achieved this by subtracting negative from positive. 
 
-```{r, echo=TRUE}
+```{r all-sentiment-setup, echo=TRUE}
 bt_afinn <- bt_tweets_tidy %>% 
   inner_join(get_sentiments("afinn")) %>% 
   group_by(person, index = tweetnumber %/% 150) %>% 
@@ -493,7 +493,7 @@ bt_all_sent <- bind_rows(bt_afinn, bt_bing_and_nrc)
 
 Now the dataset is ready to do some graph! From the graphs, AFINN and Bing both show simialr trends, however NRC sentiment is over whelminingly positive, We can do a little check of that account. As you can see from the NRC and Bing tibbles, you can tell NRC has less negative words and more positive words compare to Bing, which is probably the major reason why both Trump and Biden seem a lot more positive when using NRC measurement.
 
-```{r, echo=TRUE, fig.height=9, fig.width=12}
+```{r sentiment-overtime-graph, echo=TRUE, fig.height=9, fig.width=12}
 bt_all_sent %>% filter(person == "Biden") %>% 
   ggplot(aes(index, sentiment, fill = method)) + 
   geom_col(show.legend = FALSE) +
@@ -516,14 +516,14 @@ get_sentiments("bing") %>%
 
 This is a rather simple method, we just need to take the bw_tweet_tidy which is already prepared for graphing and inner_join with sentiment. So how is Trump sentiments perform since his announcement of presidential campaign in 2015/06/16? It is quite obvious that over time his tweets are becoming more negative than positive where the difference between the two become negative as shown in the difference line. But what about Biden's sentiment after his announcement of his 2020 presidential campaign? The graph showed an opposite story, which the positive line diverge from the negative line early on and the difference is even larger in later tweets. 
 
-```{r}
+```{r afinn-setup}
 bt_tweets_sent <- bt_tweets_tidy %>%
   inner_join(get_sentiments("afinn")) %>% 
   group_by(tweetnumber, timestamp, person, word) %>% 
   summarise(value) %>%
   ungroup()
 ```
-```{r, echo=FALSE}
+```{r plotly-theme, echo=FALSE}
 tb <- list(
   tickfont = list(color = "#2ca02c40"),
   overlaying = "y",
@@ -533,7 +533,7 @@ tb <- list(
   zeroline = F
 )
 ```
-```{r, echo=TRUE}
+```{r cumulative-sentiment-graph, echo=TRUE}
 bt_tweets_sent %>% 
   filter(person == "Trump" &
            !word %in% "trump" &
@@ -573,7 +573,7 @@ bt_tweets_sent %>%
 
 Here, we going to check individual word contribution to the overall sentiment for both Twittier accounts. we will look on detail later on how words associate with eatch other 
 
-```{r, echo=TRUE}
+```{r words-contribution, echo=TRUE}
 wordcount <- bt_tweets_tidy %>%
   inner_join(get_sentiments("bing")) %>%
   count(person, word, sentiment, sort = TRUE) %>%
