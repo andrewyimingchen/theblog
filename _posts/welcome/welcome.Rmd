@@ -266,12 +266,12 @@ bratio <- bt_words_ratio %>%
   filter(logratio>0)  
 
 subplot(plot_ly(bratio, x=~logratio, y=~word, type = "bar", name = "Biden", color = I("blue")),
-        plot_ly(tratio, x=~logratio, y=~word, type = "bar", name = "Trump", color = I("red")),
-        shareX = TRUE, nrows = 2) %>%
-        layout(legend = list(x = 100, y = 0.5),
-               title = "log odds ratio (Biden/Trump)",
-               width = 800, height = 800) %>%
-        theme_plotly()
+        plot_ly(tratio, x=~logratio, y=~word, type = "bar", name = "Trump", color = I("red"), yaxis="y2"),
+        shareX = TRUE) %>%
+  layout(legend = list(x = 100, y = 0.5),
+         title = "log odds ratio (Biden/Trump)",
+         width = 800) %>%
+  theme_plotly()
 ```
 
 ## Retweets and likes
