@@ -9,11 +9,12 @@
     <generator>Distill</generator>
     <lastBuildDate>Mon, 30 Nov 2020 00:00:00 +0000</lastBuildDate>
     <item>
-      <title>Twitter Analysis</title>
+      <title>Biden vs Trump</title>
       <dc:creator>Andrew Chen</dc:creator>
       <link>https://andrewyimingchen.github.io/theblog/posts/welcome</link>
       <description>A text analysis on Biden's and Trump's Twitter account.</description>
       <category>text analysis</category>
+      <category>twitter analysis</category>
       <category>rstats</category>
       <guid>https://andrewyimingchen.github.io/theblog/posts/welcome</guid>
       <pubDate>Mon, 30 Nov 2020 00:00:00 +0000</pubDate>
