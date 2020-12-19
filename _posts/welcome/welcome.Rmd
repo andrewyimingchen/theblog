@@ -34,6 +34,9 @@ library(broom)
 library(reshape2)
 library(plotly)
 library(visibly)
+library(igraph)
+library(ggraph)
+library(widyr)
 ```
 
 ## Get data
@@ -127,8 +130,8 @@ frequ %>% ggplot(aes(Biden, Trump)) +
 However, Biden's Twitter account is barely active prior to his announcement of 2020 election, so let's see the frequency plot after 2019/04/25. Again, you see "fake" still falls above the redline and "climate" at the bottem right. 
 
 ```{r 2019-frequency,echo=TRUE, message=FALSE}
-bt_tweets_tidy_campagin <- bt_tweets_tidy %>% filter(timestamp >= as.Date("2019-04-25"))
-frequ_2019 <- bt_tweets_tidy_campagin %>%
+bt_tweets_tidy_campaign <- bt_tweets_tidy %>% filter(timestamp >= as.Date("2019-04-25"))
+frequ_2019 <- bt_tweets_tidy_campaign %>%
   group_by(person) %>%
   count(word, sort = TRUE) %>%
   left_join(bt_tweets_tidy %>%
@@ -214,10 +217,10 @@ bt_tweets_tidy %>%
 
 ## Odds ratio
 
-In order to know which word is more likely to be used in either Twitter account, we will find the odds ratio for each words and here we use the timeframe after Biden announced his presidential campagin. After ungroup, we spread the data by person.
+In order to know which word is more likely to be used in either Twitter account, we will find the odds ratio for each words and here we use the timeframe after Biden announced his presidential campaign. After ungroup, we spread the data by person.
 
 ```{r oddratio-setup, echo=TRUE}
-bt_words_ratio <- bt_tweets_tidy_campagin %>%
+bt_words_ratio <- bt_tweets_tidy_campaign %>%
   filter(!str_detect(word, "^@")) %>% # remove tags on individual accounts 
   count(word, person) %>%
   group_by(word) %>%
@@ -232,7 +235,7 @@ bt_words_ratio <- bt_tweets_tidy_campagin %>%
 Here it's just a demonstration of how to calculate the odds ratio manunally.
 
 ```{r manual-setup, echo=TRUE}
-bt_tweets_tidy_campagin %>%
+bt_tweets_tidy_campaign %>%
   filter(!str_detect(word, "^@")) %>%
   count(word, person) %>%
   group_by(word) %>%
@@ -406,7 +409,7 @@ subplot(sub_trump %>%
 So now we would look at how words' frequencies change overtime. To do that, we first create a new time variable to get the unit of time to calculate the word in that time span. Here, I choose 1 month as the base, in floor_date() you can set your unit of time in different measures. The count() counts how many times the word is use in 1 month then follow by a group_by() to account unit of time in order to use a mutate() to attach the total amount of word used in 1 month, the second group_by() accounts word so that mutate() can attach a total count of word use by that person. 
 
 ```{r wordbytime-setup, echo=TRUE}
-bt_words_by_time <- bt_tweets_tidy_campagin %>%
+bt_words_by_time <- bt_tweets_tidy_campaign %>%
   filter(!str_detect(word, "^@")) %>% # to filter out account taging in Twitter
   mutate(time_floor = floor_date(timestamp, unit = "1 month")) %>%
   count(time_floor, person, word) %>%
@@ -632,15 +635,22 @@ bt_tweets_sent %>%
 
 #### 4. What words contribute to sentiments?
 
-Here, we going to check individual word contribution to the overall sentiment for both Twittier accounts. we will look on detail later on how words associate with eatch other 
+Here, we going to check individual word contribution to the overall sentiment for both Twittier accounts, after the announcement of presidential camgaign. It is as expected that the majority of the negative sentiment in Trump's account is contributed by "fake", which is quite obvious by the constant "fake news" tweets, where as the positive sentiment is filled by "win". As for Biden, "crisis" contributed the most to the negative sentiment, which is the results of COVID19 tweets. "Support" and "protect" contributed to the positive sentiment relatively the same. Later, we will look on detail later on how words associate with eatch other.
 
 ```{r words-contribution, echo=TRUE}
-wordcount <- bt_tweets_tidy %>%
+wordcount_t <- bt_tweets_tidy %>%
+  filter(timestamp >= "2015-06-16") %>%
   inner_join(get_sentiments("bing")) %>%
   count(person, word, sentiment, sort = TRUE) %>%
   ungroup()
 
-ggplotly(wordcount %>%
+wordcount_b <- bt_tweets_tidy %>%
+  filter(timestamp >= "2019-04-25") %>%
+  inner_join(get_sentiments("bing")) %>%
+  count(person, word, sentiment, sort = TRUE) %>%
+  ungroup()
+
+ggplotly(wordcount_t %>%
            filter(person== "Trump" &
                     !word %in%custom_stop_words$word) %>%
            group_by(sentiment) %>%
@@ -650,11 +660,12 @@ ggplotly(wordcount %>%
            ggplot(aes(n, word, fill = sentiment)) +
            geom_col(show.legend = FALSE) +
            facet_wrap(~sentiment, scales = "free_y") +
-           labs(x = "Contribution to sentiment",
+           labs(title = "Trump",
+                x = "Contribution to sentiment",
                 y = NULL)) %>%
   theme_plotly()
 
-ggplotly(wordcount %>%
+ggplotly(wordcount_b %>%
            filter(person== "Biden" &
                     !word %in%custom_stop_words$word) %>%
            group_by(sentiment) %>%
@@ -664,7 +675,148 @@ ggplotly(wordcount %>%
            ggplot(aes(n, word, fill = sentiment)) +
            geom_col(show.legend = FALSE) +
            facet_wrap(~sentiment, scales = "free_y") +
-           labs(x = "Contribution to sentiment",
+           labs(title = "Biden",
+                x = "Contribution to sentiment",
                 y = NULL)) %>%
   theme_plotly()
 ```
+
+## Connecting words 
+
+#### 1. Ngrams
+
+What if you want to check the what come after the word "ABC", what should you do? Ngrams would be a good tool in this sort of situation. The data wrangling process is relative the same as the very first section of Get data, unnest_tokens(), but here the token is "ngrams" and we will have to set "n" in order to tell how many consecutive words we want from the text. After unnesting, we will get a dataframe with every two consecutive words combinations, then separate(), filter(), and count() the number of "word1" "word2" combination, last we use graph_from_data_frame() so we could create an igraph (network).
+
+```{r word_correlation, echo=TRUE}
+bt_bigrams <- bt_tweets %>%
+  unnest_tokens(bigram, tweet, token = "ngrams", n = 2) %>%
+  filter(!str_detect(bigram, "http") &
+         !str_detect(bigram, "www.") &
+         !str_detect(bigram, ".com") &
+         !str_detect(bigram, ".org$") &
+         !str_detect(bigram, "^t.co") &
+         !str_detect(bigram, "\\d") &
+         !str_detect(bigram, "^amp"))
+
+bigrams_sep <- bt_bigrams %>%
+  separate(bigram, c("word1", "word2"), sep = " ")
+
+bigrams_filt <- bigrams_sep %>%
+  filter(!word1 %in% stop_words$word) %>%
+  filter(!word2 %in% stop_words$word)
+
+bigrams_graph_t <- bigrams_filt %>%
+  filter(!word2 == "amp" &
+         timestamp >= "2015-06-16" &
+         person == "Trump") %>%
+  count(word1, word2, sort = TRUE) %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+
+bigrams_graph_b <- bigrams_filt %>%
+  filter(!word2 == "amp" &
+           timestamp >= "2019-04-25" &
+           person == "Biden") %>%
+  count(word1, word2, sort = TRUE) %>%
+  filter(n > 20) %>%
+  graph_from_data_frame()
+```
+
+Now we are ready for graphing. In the Markov chain below, the individual node represents each word and the arrow represents the direction, the darker the color of the arrow means that the number of time of the bigrams combination appears in tweets is higher. 
+
+```{r network_graph, echo=TRUE, fig.height=12, fig.width=12}
+a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
+
+ggraph(bigrams_graph_t, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "red", size = 3) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1, size = 3) +
+  theme_void() +
+  ggtitle("Trump")
+
+ggraph(bigrams_graph_b, layout = "fr") +
+  geom_edge_link(aes(edge_alpha = n), show.legend = FALSE,
+                 arrow = a, end_cap = circle(.07, 'inches')) +
+  geom_node_point(color = "blue", size = 3) +
+  geom_node_text(aes(label = name), vjust = 1, hjust = 1) +
+  theme_void() +
+  ggtitle("Biden")
+```
+
+#### 2. Correlation between words
+
+We touched on the ngrams method to analze consecutive words in a text, now we going to look at the correlation of paired words. We gonna take the bt_tweets_tidy and create a new variable sec_by100 which we bind every words in each 100 tweets of each person. Once the dataset is tidy, we can filter() for timestamp and person. Since we want to assess how likely the paired words appear together, separately, or no appearance, which we can use pairwise_cor() from the widyr package. 
+
+```{r correlation, echo=TRUE}
+bt_tweets_tidy<- bt_tweets %>%
+  arrange(timestamp) %>%
+  mutate(sec_by100 = row_number()%/%100) %>%
+  filter(!str_detect(tweet, "^RT") &
+         sec_by100 > 0) %>%
+  mutate(text = str_remove_all(tweet, remove_reg),
+         text = str_remove_all(tweet, "\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)")) %>%
+  unnest_tokens(word, text, token = "tweets") %>%
+  filter(!word %in% custom_stop_words$word,
+         !word %in% str_remove_all(custom_stop_words$word, "'"),
+         !word %in% c("amp", "lt", "gt"),
+         str_detect(word, "[a-z]") &
+         !str_detect(word, "http") &
+         !str_detect(word, "@") &
+         !str_detect(word, "cont") &
+         !str_detect(word, "www.") &
+         !str_detect(word, ".com$") &
+         !str_detect(word, ".org$") &
+         !str_detect(word, "^tco") &
+         !str_detect(word, "\\d") & 
+         !str_detect(word, "^amp") &
+         !str_detect(word, "realdonald"))
+
+word_cors_t <- bt_tweets_tidy %>%
+  filter(timestamp >= "2015-06-16" &
+         person == "Trump") %>%
+  group_by(word) %>%
+  filter(n() >= 20) %>%
+  pairwise_cor(word, sec_by100, sort = TRUE)
+
+word_cors_b <- bt_tweets_tidy %>%
+  filter(timestamp >= "2019-04-25" &
+           person == "Biden") %>%
+  group_by(word) %>%
+  filter(n() >= 20) %>%
+  pairwise_cor(word, sec_by100, sort = TRUE)
+```
+
+We are all set for the correlation graph. The method here is the same as the Markov chain graph in the example above, but the major difference is that there is no direction in the paired words, because we are showing how likely the pairs show up in the every 100 tweets. We filtered the correlation to only showing the pairs that have a correlation above 0.5, and the darker the line means the higher the correlation. It is quite interesting that in Trump's tweets he mentioned a lot of names where as Biden's tweets was more about policy. I guess from the correlation graph is much more clear how different the two accounts are tweeting about. 
+
+``` {r correlation_graph, echo= TRUE, fig.height=12, fig.width=12}
+word_cors_t %>%
+  filter(correlation > .50) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "red", size = 3) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void() +
+  ggtitle("Trump")
+
+word_cors_b %>%
+  filter(correlation > .50) %>%
+  graph_from_data_frame() %>%
+  ggraph(layout = "fr") +
+  geom_edge_link(aes(edge_alpha = correlation), show.legend = FALSE) +
+  geom_node_point(color = "blue", size = 3) +
+  geom_node_text(aes(label = name), repel = TRUE) +
+  theme_void() +
+  ggtitle("Biden")
+```
+
+## Conclusion 
+
+This is my first attemp to do a text analysis and there is a lot more to explore in this section, such as unsupervise learning with LDA. This post is just a show case of what R can achieve in text mining on Twitter to examine more detail on what these politicians are actually saying, obviously text analysis can also be down on books, document or songs. However, I am still a bit skeptical about sentiment analysis because the way these methods could assigned words into odd categories. I might revisit this topic later and make an update in the future when I got more time. 
+
+## Reference 
+
+Text Mining with R [ Julia Silge; David Robinson].
+
+An Introduction to Text Processing and Analysis with R [Michael Clark].
