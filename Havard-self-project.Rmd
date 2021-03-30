@@ -1,11 +1,19 @@
 ---
 title: "Biden vs Trump"
-author: "Andrew Chen"
-date: "1/5/2021"
+description: |
+  A text analysis on Biden's and Trump's Twitter account. 
+author:
+  - name: Andrew Chen 
+    url: https://www.linkedin.com/in/andrewyimingchen/
+date: 11-30-2020
+categories: 
+  - text analysis
+  - twitter analysis
+  - rstats
 output:
-  html_document: default
-  pdf_document: 
-    latex_engine: xelatex
+  distill::distill_article:
+    self_contained: FALSE
+    toc: true
 ---
 
 ```{r setup, include=FALSE}
@@ -832,7 +840,7 @@ The dependent and independent variables are ready for modeling, here will be usi
 
 From the logist model graph shows that the minimum deviance is about -7 and calling model lambda.min confirm the plot. 
 
-In the glmnet.fit graph, the axis above shows number of coefficients at the current regularization $\lambda$, and this the degree of freedom of Lasso. Also, all the curves represents a variable. (This part might take some time to generate, for some reason this part doesn't run with Rmarkdown, but works in R, so I put the two following code chunk to eval =FALSE as well, but these code runs in R.script) 
+In the glmnet.fit graph, the axis above shows number of coefficients at the current regularization $\lambda$, and this the degree of freedom of Lasso. Also, all the curves represents a variable.
 
 ```{r parse_matrix_6, fig.height=10, fig.width=10}
 library(glmnet)

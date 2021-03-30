@@ -15,12 +15,9 @@ output:
     self_contained: FALSE
     toc: true
 ---
+
 ```{r setup, include=FALSE}
-knitr::opts_chunk$set(echo = FALSE)
-
-# Learn more about creating blogs with Distill at:
-# https://rstudio.github.io/distill/blog.html
-
+knitr::opts_chunk$set(echo = TRUE, warning = FALSE, message = FALSE)
 ```
 
 ```{r library, echo=FALSE}
@@ -32,16 +29,16 @@ library(RColorBrewer)
 library(tidytext)
 library(broom)
 library(reshape2)
-library(plotly)
 library(visibly)
 library(igraph)
 library(ggraph)
 library(widyr)
+library(plotly)
 ```
 
 ## Get data
 
-The datasource for Trump's Twitter is from this amazing Twitter monitor website built by Brendan Brown, https://www.thetrumparchive.com/, and Biden's Tiwtter is a Kaggle dataset build by Vopani, https://www.kaggle.com/rohanrao/joe-biden-tweets.
+The datasource for Trump's Twitter is from this amazing Twitter monitor website built by [Brendan Brown](https://www.thetrumparchive.com/) and Biden's Tiwtter is a Kaggle dataset build by [Vopani](https://www.kaggle.com/rohanrao/joe-biden-tweets).
 
 ```{r get-data, echo=TRUE}
 trump_tweets <- read_csv("tweets_11-06-2020.csv")
@@ -77,7 +74,8 @@ group.colors <- c(Trump = colors()[552], Biden = colors()[26])
 
 bt_tweets %>% ggplot(aes(timestamp, fill = person)) +
   geom_histogram(position = "identity", bins = 30, show.legend = FALSE) +
-  geom_vline(xintercept = c(as.POSIXct("2015-06-16", tz = "UTC"), as.POSIXct("2019-04-25", tz = "UTC"))) +
+  geom_vline(xintercept = c(as.POSIXct("2015-06-16", tz = "UTC"), 
+                            as.POSIXct("2019-04-25", tz = "UTC"))) +
   scale_fill_manual(values = group.colors)+
   facet_wrap(~person, ncol = 1)
 ```
@@ -91,7 +89,8 @@ remove_reg <- "&amp;|&lt;|&gt;" # to remove & < >
 bt_tweets_tidy<- bt_tweets %>%
   filter(!str_detect(tweet, "^RT")) %>% # to remove retweet
   mutate(text = str_remove_all(tweet, remove_reg),
-         text = str_remove_all(tweet, "\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)")) %>% # to remove http links
+         text = str_remove_all(tweet, 
+                               "\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)")) %>% # to remove http links
   unnest_tokens(word, text, token = "tweets") %>%
   filter(!word %in% stop_words$word, # to remove stop words 
          !word %in% str_remove_all(stop_words$word, "'"), # to remove ' in word
@@ -163,7 +162,8 @@ bt_tweets_tidy %>%
   group_by(word) %>%
   filter(!str_detect(word, "^@")) %>%
   count() %>%
-with(wordcloud(word, n, min.freq = 200, max.word = 400, rot.per =0.35, random.order = FALSE,
+with(wordcloud(word, n, min.freq = 200, max.word = 400, 
+               rot.per =0.35, random.order = FALSE,
           colors = brewer.pal(12, "Paired"), scale = c(3,1)))
 ```
 
@@ -177,7 +177,8 @@ bt_tweets_tidy %>%
   group_by(word) %>%
   filter(str_detect(word, "#")) %>%
   count() %>%
-  with(wordcloud(word,n, min.freq = 1, max.word = 300, rot.per =0.35, random.order = FALSE,
+  with(wordcloud(word,n, min.freq = 1, max.word = 300, 
+                 rot.per =0.35, random.order = FALSE,
                  colors = brewer.pal(12, "Paired"), scale = c(3,0.8)))
 ```
 ```{r hastag-biden, fig.height=9, fig.width=9, echo=TRUE}
@@ -186,13 +187,14 @@ bt_tweets_tidy %>%
   group_by(word) %>%
   filter(str_detect(word, "#")) %>%
   count() %>%
-  with(wordcloud(word,n, min.freq = 1, max.word = 300, rot.per =0.35, random.order = FALSE,
+  with(wordcloud(word,n, min.freq = 1, max.word = 300, 
+                 rot.per =0.35, random.order = FALSE,
                  colors = brewer.pal(12, "Paired"), scale = c(3,0.8)))
 ```
 
 #### 3. Separation in sentiments
 
-Here I tried a slightly fancier word cloud that separate the words base on the sentiments in NRC, https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html, graph 1 represents the sentiment word counts in Trump's account, and graph 2 represents Biden's. "vote", "president" and "time" are all quite relevant in both account,  but why "vote" is assigned to surprise is beyond my understanding. 
+Here I tried a slightly fancier word cloud that separate the words base on the sentiments in [NRC](https://www.cs.uic.edu/~liub/FBS/sentiment-analysis.html), graph 1 represents the sentiment word counts in Trump's account, and graph 2 represents Biden's. "vote", "president" and "time" are all quite relevant in both account,  but why "vote" is assigned to surprise is beyond my understanding. 
 
 ```{r sentimentcloud-trump, fig.height=9, fig.width=9, echo=TRUE}
 # trump words
@@ -202,7 +204,8 @@ bt_tweets_tidy %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill =0) %>%
   comparison.cloud(colors = brewer.pal(10, "Paired"), max.words = 400, 
-                   match.colors = TRUE, title.size = 1.5, random.order = FALSE, scale = c(3,0.5))
+                   match.colors = TRUE, title.size = 1.5, 
+                   random.order = FALSE, scale = c(3,0.5))
 ```
 ```{r sentimentcloud-biden, fig.height=9, fig.width=9, echo=TRUE}
 # biden words 
@@ -212,7 +215,8 @@ bt_tweets_tidy %>%
   count(word, sentiment, sort = TRUE) %>%
   acast(word ~ sentiment, value.var = "n", fill =0) %>%
   comparison.cloud(colors = brewer.pal(10, "Paired"), max.words = 400, 
-                   match.colors = TRUE, title.size = 1.5, random.order = FALSE, scale = c(3,0.5))
+                   match.colors = TRUE, title.size = 1.5, 
+                   random.order = FALSE, scale = c(3,0.5))
 ```
 
 ## Odds ratio
@@ -240,7 +244,8 @@ bt_tweets_tidy_campaign %>%
   count(word, person) %>%
   group_by(word) %>%
   filter(sum(n) >= 10) %>%
-  ungroup() %>% # use ungroup here is because if use summarise the data would automatically reduce the dimension
+  ungroup() %>% 
+  # use ungroup here is because if use summarise the data would automatically reduce the dimension
   spread(person, n, fill = 0) %>%
   mutate(biden_t = sum(Biden),
          trump_t = sum(Trump),
@@ -254,27 +259,18 @@ From the log odds ratio graph, I pick the top 15 words in both Twitter accounts,
 
 ```{r oddratio-graph, echo=TRUE}
 ## the words more likely from the otherside 
-tratio <- bt_words_ratio %>%
+group_colors <- c("FALSE" = colors()[26], "TRUE" = colors()[552]) 
+
+bt_words_ratio %>%
   group_by(logratio < 0) %>%
   top_n(15, abs(logratio)) %>%
   ungroup() %>%
   mutate(word = reorder(word, logratio)) %>%
-  filter(logratio<0)
-
-bratio <- bt_words_ratio %>%
-  group_by(logratio < 0) %>%
-  top_n(15, abs(logratio)) %>%
-  ungroup() %>%
-  mutate(word = reorder(word, logratio)) %>%
-  filter(logratio>0)  
-
-subplot(plot_ly(bratio, x=~logratio, y=~word, type = "bar", name = "Biden", color = I("blue")),
-        plot_ly(tratio, x=~logratio, y=~word, type = "bar", name = "Trump", color = I("red"), yaxis="y2"),
-        shareX = TRUE) %>%
-  layout(legend = list(x = 100, y = 0.5),
-         title = "log odds ratio (Biden/Trump)",
-         width = 800) %>%
-  theme_plotly()
+  ggplot(aes(word, logratio, fill = `logratio < 0`)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = group_colors) +
+  coord_flip() +
+  ylab("log odds ratio (Biden/Trump)")
 ```
 
 ## Retweets and likes
@@ -311,34 +307,22 @@ bt_word_by_rts
 The following graph shows the median number of retweets for each word after filter the use for at least 5 times. It's funny that words related to A\$AP Rocky incident in Sweden are the most retweets for Trump, in the other hand Biden's words are link with COVID19. 
 
 ```{r rt-graph, echo=TRUE}
-sub_rtt <- bt_word_by_rts %>%
-  filter(uses >= 5 &
-           person == "Trump") %>%
+group.colors <- c(Trump = colors()[552], Biden = colors()[26])
+
+bt_word_by_rts %>%
+  filter(uses >= 5) %>%
   group_by(person) %>%
   top_n(10, retweets) %>%
   arrange(retweets) %>%
   ungroup() %>%
   mutate(word = factor(word, unique(word))) %>%
-  ungroup()
-
-sub_rtb <- bt_word_by_rts %>%
-  filter(uses >= 5 &
-           person == "Biden") %>%
-  group_by(person) %>%
-  top_n(10, retweets) %>%
-  arrange(retweets) %>%
   ungroup() %>%
-  mutate(word = factor(word, unique(word))) %>%
-  ungroup()
-
-subplot(sub_rtt %>%
-          plot_ly(x=~retweets, y=~word, type = "bar", color = I("red"), name = "Trump"),
-        sub_rtb %>%
-          plot_ly(x=~retweets, y=~word, type = "bar", color =I("blue"), name = "Biden")) %>%
-  layout(title = "Median number of retweets",
-         legend = list(x = 100, y = 0.5),
-         width = 850) %>%
-         theme_plotly()
+  ggplot(aes(word, retweets, fill = person)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = group.colors) +
+  facet_wrap(~person, scales = "free", ncol = 2) + 
+  coord_flip() + 
+  labs(x = NULL, y = "Median # of retweets for tweets containing each word")
 ```
 
 #### 2. Likes
@@ -370,35 +354,20 @@ bt_word_by_fav <- bt_tweets_tidy %>%
 bt_word_by_fav
 ```
 ```{r like-graph, echo=TRUE}
-sub_trump <- bt_word_by_fav %>%
-  filter(uses >= 5 &
-         person == "Trump") %>%
+bt_word_by_fav %>%
+  filter(uses >= 5) %>%
   group_by(person) %>%
   top_n(10, favs) %>%
   arrange(favs) %>%
   ungroup() %>%
   mutate(word = factor(word, unique(word))) %>%
-  ungroup()
-  
-sub_biden <- bt_word_by_fav %>%
-  filter(uses >= 5 &
-           person == "Biden") %>%
-  group_by(person) %>%
-  top_n(10, favs) %>%
-  arrange(favs) %>%
   ungroup() %>%
-  mutate(word = factor(word, unique(word))) %>%
-  ungroup()
-
-subplot(sub_trump %>%
-          plot_ly(x=~favs, y=~word, type = "bar", color = I("red"), name = "Trump"),# %>%
-          #layout(legend = list(title = "Trump's ")),
-        sub_biden %>%
-          plot_ly(x=~favs, y=~word, type = "bar", color =I("blue"), name = "Biden")) %>%
-        layout(title = "Median number of likes",
-               legend = list(x = 100, y = 0.5),
-               width = 850) %>%
-        theme_plotly()
+  ggplot(aes(word, favs, fill = person)) +
+  geom_col(show.legend = FALSE) +
+  scale_fill_manual(values = group.colors) +
+  facet_wrap(~person, scales = "free", ncol = 2) + 
+  coord_flip() + 
+  labs(x = NULL, y = "Median # of likes for tweets containing each word")
 ```
 
 
@@ -445,7 +414,8 @@ bt_nested_models <- bt_nested_data %>%
 bt_nested_models
 ### different way to run glm over nested data
 # bt_nested_models <- bt_nested_data %>%
-#  mutate(models = map(data, ~glm(cbind(count, time_total) ~ time_floor, ., family = "binomial")))
+#  mutate(models = map(data, ~glm(cbind(count, time_total) ~ time_floor, 
+#                      ., family = "binomial")))
 ###
 ```
 
@@ -469,34 +439,20 @@ From the graphs below, both illustrate the trendy words that appeared more than 
 bt_words_by_time %>%
   inner_join(top_slopes, by = c("word", "person")) %>%
   filter(person == "Trump" &
-           word_total > 350) %>%
-  plot_ly() %>%
-  add_lines(x=~time_floor, y=~count/time_total, color = ~word, mode = "line", type = "scatter") %>%
-  layout(
-    title = "Trump's word trends",
-    xaxis = list(title="Time"),
-    yaxis = list(title="Frequency"),
-    legend= list(title=list(text='<b> Word </b>'),
-                 x = 100, y = 0.5),
-    width = 800
-  ) %>%
-  theme_plotly()
+         word_total > 350) %>%
+  ggplot(aes(time_floor, count/time_total, color = word)) +
+  scale_color_brewer(palette = "Set3") + 
+  geom_line(size = 1.3) +
+  labs(x = "Trump", y = "Word frequency", caption = "Andrew Chen")
 
 bt_words_by_time %>%
   inner_join(top_slopes, by = c("word", "person")) %>%
   filter(person == "Biden" &
            word_total > 350) %>%
-  plot_ly() %>%
-  add_lines(x=~time_floor, y=~count/time_total, color = ~word, mode = "line", type = "scatter") %>%
-  layout(
-    title = "Biden's word trends",
-    xaxis = list(title="Time"),
-    yaxis = list(title="Frequency"),
-    legend= list(title=list(text='<b> Word </b>'),
-                 x = 100, y = 0.5),
-    width = 800
-  ) %>%
-  theme_plotly()
+  ggplot(aes(time_floor, count/time_total, color = word)) +
+  scale_color_brewer(palette = "Set3") + 
+  geom_line(size = 1.3) +
+  labs(x = "Biden", y = "Word frequency", caption = "Andrew Cehn")
 ```
 
 ## Whole lotta sentiments
@@ -508,7 +464,8 @@ We briefly touch on sentiments in the wordcloud section, here we going to add in
 Since we want to see the how sentiment shifts since the beginning of the first tweet, we need to make some changes to the original bt_tweets_tidy dataset above. I arrange the dataset according to timestamp then create an index for each row, and here we used a custom stopword "trump" to filter out trump, because Bing sentiment take "trump" as an positive vocabulary, which would show overly positive bias in both account, becuase they both mentioned "Trump" a lot of times.
 
 ```{r sentiment-setup, echo=TRUE}
-custom_stop_words <- bind_rows(tibble(word = c("trump"), lexicon = c("custom")), stop_words)
+custom_stop_words <- bind_rows(tibble(word = c("trump"), 
+                                      lexicon = c("custom")), stop_words)
 
 bt_tweets_tidy<- bt_tweets %>%
   arrange(timestamp) %>%
@@ -595,7 +552,7 @@ tb <- list(
   zeroline = F
 )
 ```
-```{r cumulative-sentiment-graph, echo=TRUE}
+```{r cumulative-sentiment-graph, echo=TRUE, fig.height=6, fig.width=6}
 bt_tweets_sent %>% 
   filter(person == "Trump" &
            !word %in% "trump" &
@@ -605,7 +562,8 @@ bt_tweets_sent %>%
   plot_ly() %>% 
   add_lines(x=~tweetnumber, y=~positivity, name='positive') %>% 
   add_lines(x=~tweetnumber, y=~negativity, name='negative', color = I("red")) %>%
-  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", yaxis="y2", color = I("#ff8400")) %>% 
+  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", 
+            yaxis="y2", color = I("#ff8400")) %>% 
   layout(
     title = "Trump's overall cumulative sentiment",
     yaxis = list(title='absolute cumulative sentiment'),
@@ -623,7 +581,8 @@ bt_tweets_sent %>%
   plot_ly() %>% 
   add_lines(x=~tweetnumber, y=~positivity, name='positive') %>% 
   add_lines(x=~tweetnumber, y=~negativity, name='negative', color = I("red")) %>%
-  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", yaxis="y2", color = I("#ff8400")) %>% 
+  add_lines(x=~tweetnumber, y=~positivity - negativity, name="difference", 
+            yaxis="y2", color = I("#ff8400")) %>% 
   layout(
     title = "Biden's overall cumulative sentiment",
     yaxis = list(title='absolute cumulative sentiment'),
@@ -650,7 +609,7 @@ wordcount_b <- bt_tweets_tidy %>%
   count(person, word, sentiment, sort = TRUE) %>%
   ungroup()
 
-ggplotly(wordcount_t %>%
+wordcount_t %>%
            filter(person== "Trump" &
                     !word %in%custom_stop_words$word) %>%
            group_by(sentiment) %>%
@@ -662,10 +621,9 @@ ggplotly(wordcount_t %>%
            facet_wrap(~sentiment, scales = "free_y") +
            labs(title = "Trump",
                 x = "Contribution to sentiment",
-                y = NULL)) %>%
-  theme_plotly()
+                y = NULL) 
 
-ggplotly(wordcount_b %>%
+wordcount_b %>%
            filter(person== "Biden" &
                     !word %in%custom_stop_words$word) %>%
            group_by(sentiment) %>%
@@ -677,8 +635,7 @@ ggplotly(wordcount_b %>%
            facet_wrap(~sentiment, scales = "free_y") +
            labs(title = "Biden",
                 x = "Contribution to sentiment",
-                y = NULL)) %>%
-  theme_plotly()
+                y = NULL)
 ```
 
 ## Connecting words 
@@ -724,7 +681,7 @@ bigrams_graph_b <- bigrams_filt %>%
 
 Now we are ready for graphing. In the Markov chain below, the individual node represents each word and the arrow represents the direction, the darker the color of the arrow means that the number of time of the bigrams combination appears in tweets is higher. 
 
-```{r network_graph, echo=TRUE, fig.height=12, fig.width=12}
+```{r network_graph, echo=TRUE, fig.height=10, fig.width=10}
 a <- grid::arrow(type = "closed", length = unit(.15, "inches"))
 
 ggraph(bigrams_graph_t, layout = "fr") +
@@ -789,7 +746,7 @@ word_cors_b <- bt_tweets_tidy %>%
 
 We are all set for the correlation graph. The method here is the same as the Markov chain graph in the example above, but the major difference is that there is no direction in the paired words, because we are showing how likely the pairs show up in the every 100 tweets. We filtered the correlation to only showing the pairs that have a correlation above 0.5, and the darker the line means the higher the correlation. It is quite interesting that in Trump's tweets he mentioned a lot of names where as Biden's tweets was more about policy. I guess from the correlation graph is much more clear how different the two accounts are tweeting about. 
 
-``` {r correlation_graph, echo= TRUE, fig.height=12, fig.width=12}
+``` {r correlation_graph, echo= TRUE, fig.height=10, fig.width=10}
 word_cors_t %>%
   filter(correlation > .50) %>%
   graph_from_data_frame() %>%
@@ -811,12 +768,296 @@ word_cors_b %>%
   ggtitle("Biden")
 ```
 
+## Model
+
+My original plan is to use the tokenized text that I create above to predict what which text come from Trump or Biden, I successfully build a model using a logistic model with LASSO regularization, but I failed on building other models using text data to predict the "person" variable. I will first show the model using text data and later section will show a same dataset but using "retweets" and "likes" to predict the "person".
+
+### Text dataset
+
+I am using a slightly different regular expression here, the reason being that it's simpler code do get what I did above, I haven't rewrite the above data cleaning, so in order to get the same result from above do please use the original regular expression. 
+
+So a crucial part in modeling a classification using text is to first separate the text to words, which I demonstrate throughout this project using unnest_tokens(), also since this is a Twitter data the text are sometimes embedded with html code like amp (&), lt (<), gt(>).
+
+```{r parse_matrix_1}
+bt_tweets <- bt_tweets %>% mutate(id = row_number())
+bt_text <- bt_tweets %>% 
+           mutate(text = str_remove_all(tweet, remove_reg),
+           text = str_remove_all(tweet, "\\s?(f|ht)(tp)(s?)(://)([^\\.]*)[\\.|/](\\S*)"),
+           person = as.factor(if_else(person=="Biden", "Biden", "Trump"))) %>%
+           filter(!text =="") %>% 
+           select(-timestamp, tweet, -retweets, -likes) %>%
+           unnest_tokens(word, text, token = "tweets") %>% 
+           filter(!word %in% stop_words$word & !word %in% c("amp", "lt", "gt"))
+```
+
+Here I only select words that been use more than 10 times by both Trump and Biden, I am actually not sure what would be a good measure here, I have not read enough to know what number to settle with but definitely not 1 because that would include way too many words and all these are going to be outliers since either person only use it once. 
+
+```{r parse_matrix_2}
+text_10 <- bt_text %>% 
+  group_by(word) %>% 
+  filter(n() >=10) %>%
+  ungroup()
+```
+
+The following model I use are mentioned in [Text classification with tidy data principles by Julia Silge](https://www.r-bloggers.com/2018/12/text-classification-with-tidy-data-principles/), the initial_split() here by default split the data into 0.75 for training() and 0.25 for testing(). 
+
+```{r parse_matrix_3}
+## building the model 
+library(rsample)
+tweets_split <- bt_tweets %>%
+                select(id) %>%
+                initial_split()
+
+train_data <- training(tweets_split)
+test_data <- testing(tweets_split)
+```
+
+cast_sparse() is an easy way to transform a dataset into sparse matrix, since the train_data is basically just a column of "id" variable, first count how many times a word (word) is used in a tweet (id) then left_join() training_data back to the text_10, so the sparsed matrix will have "id" as row, "word" as column, and "n" (the number of time the word is used in one tweet) as the value in the matrix. 
+
+```{r parse_matrix_4}
+text_10 %>%
+  count(id, word) %>%
+  inner_join(train_data)
+
+words_spar <- text_10 %>%
+  count(id, word) %>%
+  inner_join(train_data) %>%
+  cast_sparse(id, word, n)
+```
+
+With the sparse matrix above now the model just missing the y, or the classification that I am trying to predict. First, transform the row names of the sparse matrix which is "id" back to integer, then tibble so that the predictor "person" from original data (bt_tweets) can left_join back.
+
+```{r parse_matrix_5}
+words_rown <- as.integer(rownames(words_spar))
+
+tweets_joined <- tibble(id = words_rown) %>%
+  left_join(bt_tweets %>%
+              select(id, person))
+
+```
+
+The dependent and independent variables are ready for modeling, here will be using glmnet package to rung logistic regression and Lasso regularization. But you might ask why Lasso, what is it good for? It is a good method to minimize overfitting at the same time maintaining a simple model. 
+
+From the logist model graph shows that the minimum deviance is about -7 and calling model lambda.min confirm the plot. 
+
+In the glmnet.fit graph, the axis above shows number of coefficients at the current regularization $\lambda$, and this the degree of freedom of Lasso. Also, all the curves represents a variable.
+
+```{r parse_matrix_6, fig.height=10, fig.width=10}
+library(glmnet)
+library(doMC)
+registerDoMC(cores = 8) # parallel processing
+
+is_biden <- tweets_joined$person == "Biden"
+logist_model <- cv.glmnet(words_spar, is_biden,
+                   family = "binomial",
+                   parallel = TRUE, keep = TRUE
+)
+
+length(is_biden)
+length(words_spar)
+
+plot(logist_model)
+log(logist_model$lambda.min)
+plot(logist_model$glmnet.fit)
+
+```
+
+Now let's visualize the model, the graph show that these coefficients are the one has the most impact to probability, which alot of sense, as you can imagine @breitbartnews, #maga, @realdonaldtrump, @foxnewsfreinds and riots are most likely comming from Trump's Twitter than Biden's, where as drbiden, @teamjoe, and @kamalaharris are very much unlikely to come from Trump's account. 
+
+```{r parse_matrix_7, fig.height=10, fig.width=10}
+library(broom)
+
+logist_coefs <- logist_model$glmnet.fit %>%
+  tidy() %>%
+  filter(lambda == logist_model$lambda.1se)
+
+logist_coefs %>%
+  group_by(estimate > 0) %>%
+  top_n(15, abs(estimate)) %>%
+  ungroup() %>%
+  ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
+  geom_col(alpha = 0.5, show.legend = FALSE) +
+  coord_flip() +
+  labs(
+    x = "Words",
+    title = "The coefs"
+  ) + theme_minimal()
+```
+
+Now it is ready for prediction and model evaluations, logist_class is created in order to show the probability of the tweet coming from by Biden's account. The ROC curve seems pretty good, the AUC score is about 0.988, and the with probability of 0.5 as a cutoff point the confusion matrix shows that TP 1101, FP 134, FN 351, TN 10383. 
+
+```{r parse_matrix_8, fig.height=10, fig.width=10}
+int <- logist_coefs %>%
+  filter(term == "(Intercept)") %>%
+  pull(estimate)
+
+logist_class <- text_10 %>%
+  inner_join(test_data) %>%
+  inner_join(logist_coefs, by = c("word" = "term")) %>%
+  group_by(id) %>%
+  summarize(score = sum(estimate)) %>%
+  mutate(probability = plogis(int + score))
+
+logist_class
+
+# model metric
+library(yardstick)
+
+logist_metrics <- logist_class %>%
+  left_join(bt_tweets %>%
+              select(person, id), by = "id") %>%
+  mutate(person = as.factor(person))
+
+logist_metrics %>%
+  roc_curve(person, probability) %>%
+  ggplot(aes(x = 1 - specificity, y = sensitivity)) +
+  geom_line(
+    color = "blue",
+    size = 2
+  ) +
+  geom_abline(
+    lty = 2, alpha = 0.5,
+    color = "black",
+    size = 1.2
+  ) +
+  labs(
+    title = "Was it Biden or Trump",
+    subtitle = "ROC curve for text classification, predicting which text was from Biden or Trump"
+  ) + theme_minimal()
+
+# AUC estimates 
+logist_metrics %>%
+  roc_auc(person, probability)
+
+# confusion metric
+logist_metrics %>%
+  mutate(
+    prediction = case_when(
+      probability > 0.5 ~ "Biden",
+      TRUE ~ "Trump"
+    ),
+    prediction = as.factor(prediction)
+  ) %>%
+  conf_mat(person, prediction)
+
+```
+
+### Retweets + likes 
+
+In this section I attempt to run 4 different models using the same function:
+
+$$
+Y = \beta_1X_1 + \beta_2X_2
+$$
+Here, I denote $Y$ as person, $X_1$ as retweets, and $X_2$ as likes of that tweets.
+
+#### Data setup 
+
+```{r}
+library(caret)
+train_index <- createDataPartition(bt_tweets$person, p = .8, list = FALSE)
+training_bt <- bt_tweets[train_index,]
+testing_bt  <- bt_tweets[-train_index,]
+```
+
+#### Naive Bayes 
+
+This model has an accuracy of 0.8663 but has a p-value of 1.
+
+```{r}
+nb_bt <- train(person ~ likes + retweets,
+                data = training_bt,
+                method = "naive_bayes",
+                trControl = trainControl(method = "none"),
+                tuneGrid = data.frame(laplace = 0,
+                                      usekernel = FALSE,
+                                      adjust = FALSE))
+nb_predict <- predict(nb_bt,
+                   newdata = testing_bt)
+nb_confm <- confusionMatrix(nb_predict, as.factor(bt_tweets[-train_index, ]$person))
+nb_confm
+```
+
+#### LogitBoost
+
+This model compare to Naive Bayes perform a lot better with an accuracy of 0.8883 and a p-value of 0.05029.
+
+```{r}
+library(caTools)
+logitboost_bt <- train(person ~ likes + retweets,
+                        data = training_bt,
+                        method = "LogitBoost",
+                        trControl = trainControl(method = "none"))
+
+logitboost_predict <- predict(logitboost_bt,
+                           newdata = testing_bt)
+
+logitboost_confm <- confusionMatrix(logitboost_predict, as.factor(bt_tweets[-train_index, ]$person))
+logitboost_confm
+```
+
+#### Support Vector Machine 
+
+This model has an accuracy of 0.8821 and a p-value of 0.6272, perform slightly worst than LogitBoost but better than Naive Bayes.
+
+```{r}
+svm_bt <- train(person ~ likes + retweets,
+                 data = training_bt,
+                 method = "svmLinearWeights2",
+                 trControl = trainControl(method = "none"),
+                 tuneGrid = data.frame(cost = 1, 
+                                       Loss = 0, 
+                                       weight = 1))
+svm_predict <- predict(svm_bt,
+                    newdata = testing_bt)
+svm_confm <- confusionMatrix(svm_predict, as.factor(bt_tweets[-train_index, ]$person))
+svm_confm
+```
+
+#### Random Forest 
+
+This model has an accuracy of 0.916 and a p-value < 2.2e-16, which is a better performance compare to other 3 models. 
+
+```{r}
+rf_bt <- train(person ~ likes + retweets,
+                data = training_bt,
+                method = "ranger",
+                trControl = trainControl(method = "none"),
+                tuneGrid = data.frame(mtry = floor(sqrt(dim(train_index)[2])),
+                                      splitrule = "gini",
+                                      min.node.size = 1))
+
+rf_predict <- predict(rf_bt,
+                   newdata = testing_bt)
+
+rf_confm <- confusionMatrix(rf_predict, as.factor(bt_tweets[-train_index, ]$person))
+rf_confm
+
+model_results <- bind_rows(
+  nb_confm$overall,
+  logitboost_confm$overall,
+  svm_confm$overall,
+  rf_confm$overall,
+) %>%
+  as.data.frame() %>%
+  mutate(model = c("Naive-Bayes", "LogitBoost", "SVM", "Random forest"))
+
+model_results
+```
+
 ## Conclusion 
 
-This is my first attemp to do a text analysis and there is a lot more to explore in this section, such as unsupervise learning with LDA. This post is just a show case of what R can achieve in text mining on Twitter to examine more detail on what these politicians are actually saying, obviously text analysis can also be down on books, document or songs. However, I am still a bit skeptical about sentiment analysis because the way these methods could assigned words into odd categories. I might revisit this topic later and make an update in the future when I got more time. 
+This is my first attempt to do a text analysis and there is a lot more to explore in this section, such as unsupervise learning with LDA. This post is just a show case of what R can achieve in text mining on Twitter to examine more detail on what these politicians are actually saying, obviously text analysis can also be down on books, document or songs. However, I am still a bit skeptical about sentiment analysis because the way these methods could assigned words into odd categories. 
+
+From the supervise machine learning that I employed 2 different approaches to tackle classification problems. in this project, comparing the results of logistic regression with Lasso regularization on text sparse matrix to the classification and conventional way of using continuous variable to predict a discrete variable. I am surprised to find out that using text can actually get such a high estimate as 0.988 and with a better sensitivity which can be confirmed from the confusion matrix, but process pretty fast with an adequate sensitivity as well. 
+
+Text analysis has a lot of practical implications, such as detecting fake news, financial fraud, and easier to understand a large number of documentations. However, In this project I barely touch on much mathematical details, since I intend to write this as an application of R in text analysis. I might revisit this topic later and make an update in the future when I got more time and redo the classification problem using caret and try other modeling techniques. 
 
 ## Reference 
 
-Text Mining with R [ Julia Silge; David Robinson].
-
-An Introduction to Text Processing and Analysis with R [Michael Clark].
+1. Rafael A. Irizarry. (2019), [Introduction to Data Science](https://rafalab.github.io/dsbook)
+1. Silge, Robinson (2017), [Text Mining with R](https://www.tidytextmining.com/index.html)
+1. Xie, Allaire, Grolemund (2020), [R Markdown: The Definitive Guide](https://bookdown.org/yihui/rmarkdown/)
+1. Michael ClarkAn (2018), [Introduction to Text Processing and Analysis](https://m-clark.github.io/text-analysis-with-R/)
+1. Julia Silge (2018), [Text classification with tidy data principles](https://www.r-bloggers.com/2018/12/text-classification-with-tidy-data-principles/)
+1. Boehmke, Greenwell. (2020), [Hands-On Machine Learning with R](https://bradleyboehmke.github.io/HOML/)
