@@ -10,6 +10,7 @@ categories:
   - text analysis
   - twitter analysis
   - rstats
+  - Machine Learning
 output:
   distill::distill_article:
     self_contained: FALSE
