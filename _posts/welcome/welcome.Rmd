@@ -260,18 +260,27 @@ From the log odds ratio graph, I pick the top 15 words in both Twitter accounts,
 
 ```{r oddratio-graph, echo=TRUE}
 ## the words more likely from the otherside 
-group_colors <- c("FALSE" = colors()[26], "TRUE" = colors()[552]) 
-
-bt_words_ratio %>%
+tratio <- bt_words_ratio %>%
   group_by(logratio < 0) %>%
   top_n(15, abs(logratio)) %>%
   ungroup() %>%
   mutate(word = reorder(word, logratio)) %>%
-  ggplot(aes(word, logratio, fill = `logratio < 0`)) +
-  geom_col(show.legend = FALSE) +
-  scale_fill_manual(values = group_colors) +
-  coord_flip() +
-  ylab("log odds ratio (Biden/Trump)")
+  filter(logratio<0)
+
+bratio <- bt_words_ratio %>%
+  group_by(logratio < 0) %>%
+  top_n(15, abs(logratio)) %>%
+  ungroup() %>%
+  mutate(word = reorder(word, logratio)) %>%
+  filter(logratio>0)  
+
+subplot(plot_ly(bratio, x=~logratio, y=~word, type = "bar", name = "Biden", color = I("blue")),
+        plot_ly(tratio, x=~logratio, y=~word, type = "bar", name = "Trump", color = I("red"), yaxis="y2"),
+        shareX = TRUE) %>%
+  layout(legend = list(x = 100, y = 0.5),
+         title = "log odds ratio (Biden/Trump)",
+         width = 800) %>%
+  theme_plotly()
 ```
 
 ## Retweets and likes
@@ -308,22 +317,34 @@ bt_word_by_rts
 The following graph shows the median number of retweets for each word after filter the use for at least 5 times. It's funny that words related to A\$AP Rocky incident in Sweden are the most retweets for Trump, in the other hand Biden's words are link with COVID19. 
 
 ```{r rt-graph, echo=TRUE}
-group.colors <- c(Trump = colors()[552], Biden = colors()[26])
-
-bt_word_by_rts %>%
-  filter(uses >= 5) %>%
+sub_rtt <- bt_word_by_rts %>%
+  filter(uses >= 5 &
+           person == "Trump") %>%
   group_by(person) %>%
   top_n(10, retweets) %>%
   arrange(retweets) %>%
   ungroup() %>%
   mutate(word = factor(word, unique(word))) %>%
+  ungroup()
+
+sub_rtb <- bt_word_by_rts %>%
+  filter(uses >= 5 &
+           person == "Biden") %>%
+  group_by(person) %>%
+  top_n(10, retweets) %>%
+  arrange(retweets) %>%
   ungroup() %>%
-  ggplot(aes(word, retweets, fill = person)) +
-  geom_col(show.legend = FALSE) +
-  scale_fill_manual(values = group.colors) +
-  facet_wrap(~person, scales = "free", ncol = 2) + 
-  coord_flip() + 
-  labs(x = NULL, y = "Median # of retweets for tweets containing each word")
+  mutate(word = factor(word, unique(word))) %>%
+  ungroup()
+
+subplot(sub_rtt %>%
+          plot_ly(x=~retweets, y=~word, type = "bar", color = I("red"), name = "Trump"),
+        sub_rtb %>%
+          plot_ly(x=~retweets, y=~word, type = "bar", color =I("blue"), name = "Biden", yaxis = "y2"), shareX = TRUE) %>%
+  layout(title = "Median number of retweets",
+         legend = list(x = 100, y = 0.5),
+         width = 850) %>%
+  theme_plotly()
 ```
 
 #### 2. Likes
@@ -354,7 +375,7 @@ bt_word_by_fav <- bt_tweets_tidy %>%
 
 bt_word_by_fav
 ```
-```{r like-graph, echo=TRUE}
+```{r,eval=FALSE, echo=FALSE}
 bt_word_by_fav %>%
   filter(uses >= 5) %>%
   group_by(person) %>%
@@ -369,6 +390,38 @@ bt_word_by_fav %>%
   facet_wrap(~person, scales = "free", ncol = 2) + 
   coord_flip() + 
   labs(x = NULL, y = "Median # of likes for tweets containing each word")
+```
+```{r like-graph, echo=TRUE}
+sub_trump <- bt_word_by_fav %>%
+  filter(uses >= 5 &
+           person == "Trump") %>%
+  group_by(person) %>%
+  top_n(10, favs) %>%
+  arrange(favs) %>%
+  ungroup() %>%
+  mutate(word = factor(word, unique(word))) %>%
+  ungroup()
+
+sub_biden <- bt_word_by_fav %>%
+  filter(uses >= 5 &
+           person == "Biden") %>%
+  group_by(person) %>%
+  top_n(10, favs) %>%
+  arrange(favs) %>%
+  ungroup() %>%
+  mutate(word = factor(word, unique(word))) %>%
+  ungroup()
+
+subplot(sub_trump %>%
+          plot_ly(x=~favs, y=~word, type = "bar", color = I("red"), name = "Trump"),# %>%
+        #layout(legend = list(title = "Trump's ")),
+        sub_biden %>%
+          plot_ly(x=~favs, y=~word, type = "bar", color =I("blue"), name = "Biden", yaxis = "y2"),
+                  shareX = TRUE) %>%
+  layout(title = "Median number of likes",
+         legend = list(x = 100, y = 0.5),
+         width = 850) %>%
+  theme_plotly()
 ```
 
 
@@ -436,24 +489,38 @@ top_slopes <- slopes %>% filter(adjusted.p.value <0.05)
 
 From the graphs below, both illustrate the trendy words that appeared more than 350 times in the period of 2019-04-25 to now. In the trump graph, it is obvious that closer to the election date the mentioning of biden and vote skyrocket compare to other words. In the other hand, biden graph shows that "trump" and "president" maintian rather stable high freqencies. 
 
-```{r wordsbytime, echo=TRUE}
+```{r wordsbytime, echo=TRUE, fig.width=9}
 bt_words_by_time %>%
   inner_join(top_slopes, by = c("word", "person")) %>%
   filter(person == "Trump" &
-         word_total > 350) %>%
-  ggplot(aes(time_floor, count/time_total, color = word)) +
-  scale_color_brewer(palette = "Set3") + 
-  geom_line(size = 1.3) +
-  labs(x = "Trump", y = "Word frequency", caption = "Andrew Chen")
+           word_total > 350) %>%
+  plot_ly() %>%
+  add_lines(x=~time_floor, y=~count/time_total, color = ~word, mode = "line", type = "scatter") %>%
+  layout(
+    title = "Trump's word trends",
+    xaxis = list(title="Time"),
+    yaxis = list(title="Frequency"),
+    legend= list(title=list(text='<b> Word </b>'),
+                 x = 100, y = 0.5),
+    width = 800
+  ) %>%
+  theme_plotly()
 
 bt_words_by_time %>%
   inner_join(top_slopes, by = c("word", "person")) %>%
   filter(person == "Biden" &
            word_total > 350) %>%
-  ggplot(aes(time_floor, count/time_total, color = word)) +
-  scale_color_brewer(palette = "Set3") + 
-  geom_line(size = 1.3) +
-  labs(x = "Biden", y = "Word frequency", caption = "Andrew Cehn")
+  plot_ly() %>%
+  add_lines(x=~time_floor, y=~count/time_total, color = ~word, mode = "line", type = "scatter") %>%
+  layout(
+    title = "Biden's word trends",
+    xaxis = list(title="Time"),
+    yaxis = list(title="Frequency"),
+    legend= list(title=list(text='<b> Word </b>'),
+                 x = 100, y = 0.5),
+    width = 800
+  ) %>%
+  theme_plotly()
 ```
 
 ## Whole lotta sentiments
@@ -609,34 +676,59 @@ wordcount_b <- bt_tweets_tidy %>%
   inner_join(get_sentiments("bing")) %>%
   count(person, word, sentiment, sort = TRUE) %>%
   ungroup()
+```
 
-wordcount_t %>%
-           filter(person== "Trump" &
-                    !word %in%custom_stop_words$word) %>%
-           group_by(sentiment) %>%
-           top_n(10) %>%
-           ungroup() %>%
-           mutate(word = reorder(word, n)) %>%
-           ggplot(aes(n, word, fill = sentiment)) +
-           geom_col(show.legend = FALSE) +
-           facet_wrap(~sentiment, scales = "free_y") +
-           labs(title = "Trump",
-                x = "Contribution to sentiment",
-                y = NULL) 
+This code chunk is basically prepping the dataset for using subplot.
 
-wordcount_b %>%
-           filter(person== "Biden" &
-                    !word %in%custom_stop_words$word) %>%
-           group_by(sentiment) %>%
-           top_n(10) %>%
-           ungroup() %>%
-           mutate(word = reorder(word, n)) %>%
-           ggplot(aes(n, word, fill = sentiment)) +
-           geom_col(show.legend = FALSE) +
-           facet_wrap(~sentiment, scales = "free_y") +
-           labs(title = "Biden",
-                x = "Contribution to sentiment",
-                y = NULL)
+```{r prep_before_graph, echo=TRUE}
+wordcount_t_p <- wordcount_t %>%
+  filter(person== "Trump" &
+           !word %in%custom_stop_words$word &
+           sentiment == "positive") %>%
+  top_n(10) %>%
+  ungroup()
+
+
+wordcount_t_n <- wordcount_t %>%
+  filter(person== "Trump" &
+           !word %in%custom_stop_words$word &
+           sentiment == "negative") %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup()
+
+wordcount_b_p <- wordcount_b %>%
+  filter(person== "Biden" &
+           !word %in%custom_stop_words$word &
+           sentiment == "positive") %>%
+  top_n(10) %>%
+  ungroup()
+
+wordcount_b_n <- wordcount_b %>%
+  filter(person== "Biden" &
+           !word %in%custom_stop_words$word &
+           sentiment == "negative") %>%
+  group_by(sentiment) %>%
+  top_n(10) %>%
+  ungroup()
+```
+
+```{r trump_contribution, echo=TRUE}
+subplot(plot_ly(wordcount_t_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", color = I("brown4"), width = 800),
+        plot_ly(wordcount_t_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", color = I("dodgerblue"), yaxis="y2", width = 800),
+        shareX = TRUE) %>%
+  layout(legend = list(x = 100, y = 0.5),
+         title = "Trump's word contribution") %>%
+  theme_plotly()
+```
+```{r biden_contribution, echo=TRUE}
+subplot(plot_ly(wordcount_b_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", color = I("brown4"), width = 800),
+        plot_ly(wordcount_b_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", color = I("dodgerblue"), yaxis="y2", width = 800),
+        shareX = TRUE) %>%
+  layout(legend = list(x = 100, y = 0.5),
+         title = "Biden's word contribution") %>%
+  theme_plotly()
+
 ```
 
 ## Connecting words 
@@ -843,7 +935,7 @@ From the logist model graph shows that the minimum deviance is about -7 and call
 
 In the glmnet.fit graph, the axis above shows number of coefficients at the current regularization $\lambda$, and this the degree of freedom of Lasso. Also, all the curves represents a variable.
 
-```{r parse_matrix_6, fig.height=10, fig.width=10}
+```{r parse_matrix_6, fig.height=6, fig.width=6}
 library(glmnet)
 library(doMC)
 registerDoMC(cores = 8) # parallel processing
@@ -863,31 +955,57 @@ plot(logist_model$glmnet.fit)
 
 ```
 
-Now let's visualize the model, the graph show that these coefficients are the one has the most impact to probability, which alot of sense, as you can imagine @breitbartnews, #maga, @realdonaldtrump, @foxnewsfreinds and riots are most likely comming from Trump's Twitter than Biden's, where as drbiden, @teamjoe, and @kamalaharris are very much unlikely to come from Trump's account. 
+Now let's visualize the model, the graph show that these coefficients are the one has the most impact to probability, which makes a lot of sense, as you can imagine @breitbartnews, #maga, @realdonaldtrump, @foxnewsfreinds and riots are most likely coming from Trump's Twitter than Biden's, where as drbiden, @teamjoe, and @kamalaharris are very much unlikely to come from Trump's account. 
 
-```{r parse_matrix_7, fig.height=10, fig.width=10}
+```{r parse_matrix_7,echo=TRUE}
 library(broom)
 
 logist_coefs <- logist_model$glmnet.fit %>%
   tidy() %>%
   filter(lambda == logist_model$lambda.1se)
 
-logist_coefs %>%
+p_1 <- logist_coefs %>%
   group_by(estimate > 0) %>%
-  top_n(15, abs(estimate)) %>%
+  top_n(10, abs(estimate)) %>%
   ungroup() %>%
-  ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
-  geom_col(alpha = 0.5, show.legend = FALSE) +
-  coord_flip() +
-  labs(
-    x = "Words",
-    title = "The coefs"
-  ) + theme_minimal()
+  filter(estimate > 0)
+
+p_2 <- logist_coefs %>%
+  group_by(estimate > 0) %>%
+  top_n(10, abs(estimate)) %>%
+  ungroup() %>%
+  filter(estimate < 0)
+```
+
+The following graph shows which term increase or decrease the probability that the term is coming from Biden's account.
+
+```{r probalility_biden, echo=TRUE}
+subplot(plot_ly(p_1, x = ~estimate, y = ~fct_reorder(term, estimate), type = "bar", 
+                 color = I("blue"), name = "Increase", width = 800),
+        plot_ly(p_2, x = ~estimate, y = ~fct_reorder(term, estimate), type = "bar", 
+                color = I("red"), name = "Decrease", yaxis = "y2", width = 800), shareX = TRUE) %>%
+  layout(legend = list(x = 100, y = 0.5),
+         title = "Biden is that you?") %>%
+  theme_plotly()
+```
+
+```{r, eval=FALSE, echo=FALSE}
+# logist_coefs %>%
+#   group_by(estimate > 0) %>%
+#   top_n(15, abs(estimate)) %>%
+#   ungroup() %>%
+#   ggplot(aes(fct_reorder(term, estimate), estimate, fill = estimate > 0)) +
+#   geom_col(alpha = 0.5, show.legend = FALSE) +
+#   coord_flip() +
+#   labs(
+#     x = "Words",
+#     title = "The coefs"
+#   ) + theme_minimal()
 ```
 
 Now it is ready for prediction and model evaluations, logist_class is created in order to show the probability of the tweet coming from by Biden's account. The ROC curve seems pretty good, the AUC score is about 0.988, and the with probability of 0.5 as a cutoff point the confusion matrix shows that TP 1101, FP 134, FN 351, TN 10383. 
 
-```{r parse_matrix_8, fig.height=10, fig.width=10}
+```{r parse_matrix_8, echo=TRUE}
 int <- logist_coefs %>%
   filter(term == "(Intercept)") %>%
   pull(estimate)
