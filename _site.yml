@@ -13,7 +13,10 @@ linkedin:
   site: https://www.linkedin.com/in/andrewyimingchen/
 collections:
   posts:
-    disqus: the-blog
+    categories: TRUE
+    categories_metadata: TRUE
+    authors_metadata: TRUE
+    disqus: theblog
     share: [twitter, linkedin]
 navbar:
   right:
