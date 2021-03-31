@@ -1,7 +1,7 @@
 name: "the-blog"
 title: "THREE-256"
 theme: theme.css
-output_dir: "_site" 
+output_dir: "." 
 description: |
   THREE-256
 base_url: https://andrewyimingchen.github.io/theblog/
