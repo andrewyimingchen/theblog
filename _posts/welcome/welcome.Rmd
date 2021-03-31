@@ -337,13 +337,12 @@ sub_rtb <- bt_word_by_rts %>%
   mutate(word = factor(word, unique(word))) %>%
   ungroup()
 
-subplot(sub_rtt %>%
-          plot_ly(x=~retweets, y=~word, type = "bar", color = I("red"), name = "Trump"),
-        sub_rtb %>%
-          plot_ly(x=~retweets, y=~word, type = "bar", color =I("blue"), name = "Biden", yaxis = "y2"), shareX = TRUE) %>%
+subplot(plot_ly(sub_rtt, x=~retweets, y=~word, type = "bar", 
+                color = I("red"), name = "Trump", width = 850),
+        plot_ly(sub_rtb, x=~retweets, y=~word, type = "bar", 
+                color =I("blue"), name = "Biden", yaxis = "y2", width = 850), shareX = TRUE) %>%
   layout(title = "Median number of retweets",
-         legend = list(x = 100, y = 0.5),
-         width = 850) %>%
+         legend = list(x = 100, y = 0.5)) %>%
   theme_plotly()
 ```
 
@@ -412,15 +411,12 @@ sub_biden <- bt_word_by_fav %>%
   mutate(word = factor(word, unique(word))) %>%
   ungroup()
 
-subplot(sub_trump %>%
-          plot_ly(x=~favs, y=~word, type = "bar", color = I("red"), name = "Trump"),# %>%
-        #layout(legend = list(title = "Trump's ")),
-        sub_biden %>%
-          plot_ly(x=~favs, y=~word, type = "bar", color =I("blue"), name = "Biden", yaxis = "y2"),
-                  shareX = TRUE) %>%
+subplot(plot_ly(sub_trump, x=~favs, y=~word, type = "bar", 
+                color = I("red"), name = "Trump", width = 850),
+        plot_ly(sub_biden, x=~favs, y=~word, type = "bar", 
+                color = I("blue"), name = "Biden", width = 850, yaxis = "y2"), shareX = TRUE) %>%
   layout(title = "Median number of likes",
-         legend = list(x = 100, y = 0.5),
-         width = 850) %>%
+         legend = list(x = 100, y = 0.5)) %>%
   theme_plotly()
 ```
 
@@ -714,16 +710,20 @@ wordcount_b_n <- wordcount_b %>%
 ```
 
 ```{r trump_contribution, echo=TRUE}
-subplot(plot_ly(wordcount_t_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", color = I("brown4"), width = 800),
-        plot_ly(wordcount_t_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", color = I("dodgerblue"), yaxis="y2", width = 800),
+subplot(plot_ly(wordcount_t_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", 
+                color = I("brown4"), width = 800),
+        plot_ly(wordcount_t_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", 
+                color = I("dodgerblue"), yaxis="y2", width = 800),
         shareX = TRUE) %>%
   layout(legend = list(x = 100, y = 0.5),
          title = "Trump's word contribution") %>%
   theme_plotly()
 ```
 ```{r biden_contribution, echo=TRUE}
-subplot(plot_ly(wordcount_b_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", color = I("brown4"), width = 800),
-        plot_ly(wordcount_b_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", color = I("dodgerblue"), yaxis="y2", width = 800),
+subplot(plot_ly(wordcount_b_n, x=~n, y=~reorder(word, n), type = "bar", name = "Negative", 
+                color = I("brown4"), width = 800),
+        plot_ly(wordcount_b_p, x=~n, y=~reorder(word, n), type = "bar", name = "Positive", 
+                color = I("dodgerblue"), yaxis="y2", width = 800),
         shareX = TRUE) %>%
   layout(legend = list(x = 100, y = 0.5),
          title = "Biden's word contribution") %>%
@@ -897,6 +897,7 @@ The following model I use are mentioned in [Text classification with tidy data p
 ```{r parse_matrix_3}
 ## building the model 
 library(rsample)
+set.seed(1, sample.kind = "Rounding")
 tweets_split <- bt_tweets %>%
                 select(id) %>%
                 initial_split()
@@ -1003,7 +1004,7 @@ subplot(plot_ly(p_1, x = ~estimate, y = ~fct_reorder(term, estimate), type = "ba
 #   ) + theme_minimal()
 ```
 
-Now it is ready for prediction and model evaluations, logist_class is created in order to show the probability of the tweet coming from by Biden's account. The ROC curve seems pretty good, the AUC score is about 0.988, and the with probability of 0.5 as a cutoff point the confusion matrix shows that TP 1101, FP 134, FN 351, TN 10383. 
+Now it is ready for prediction and model evaluations, logist_class is created in order to show the probability of the tweet coming from by Biden's account. The ROC curve seems pretty good, the AUC score is about 0.988, and the with probability of 0.5 as a cutoff point the confusion matrix shows that TP 1165, FP 110, FN 344, TN 10393. 
 
 ```{r parse_matrix_8, echo=TRUE}
 int <- logist_coefs %>%
